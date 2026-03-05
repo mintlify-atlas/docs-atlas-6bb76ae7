@@ -1,0 +1,338 @@
+---
+title: 'Remote Control'
+description: 'Control your FIFA Bot from anywhere using Firebase real-time database integration'
+icon: 'mobile-screen'
+---
+
+## Overview
+
+The remote control feature allows you to manage your FIFA Bot from any device with a web browser. Using Firebase Realtime Database, you can start, stop, and capture screenshots without physical access to the bot computer.
+
+<Card title="Remote Commands" icon="terminal">
+  - **INICIAR**: Start the trading bot
+  - **DETENER**: Stop the trading bot
+  - **SCREENSHOT**: Capture and send a screenshot via WhatsApp
+  - **RELOGIN**: Automatically re-authenticate if session expires
+</Card>
+
+## Architecture
+
+The remote control system uses Firebase as a command bridge between the web interface and the bot:
+
+```
+┌─────────────────┐         ┌──────────────┐         ┌─────────────┐
+│  Web Interface  │ ──────> │   Firebase   │ ──────> │   Bot PC    │
+│  (Any Device)   │         │   Realtime   │         │  (Python)   │
+└─────────────────┘         │   Database   │         └─────────────┘
+                            └──────────────┘
+```
+
+## Firebase Integration
+
+### Bot Configuration
+
+The bot establishes a connection to Firebase on startup:
+
+```python
+# bot-desktop.py:23-31
+config = {
+  "apiKey": "AIzaSyCO09JciLlqV3N4K7hV90qK_8XBvGBaCLI",
+  "authDomain": "fifabot-e4c0b.firebaseapp.com",
+  "databaseURL": "https://fifabot-e4c0b.firebaseio.com",
+  "storageBucket": "fifabot-e4c0b.appspot.com"
+}
+
+firebase = pyrebase.initialize_app(config)
+db = firebase.database()
+db.update({"comando":"OK"})
+```
+
+<Warning>
+  The Firebase credentials shown are from the example code. You should use your own Firebase project for security.
+</Warning>
+
+### Command Listener
+
+The bot continuously monitors Firebase for incoming commands:
+
+```python
+# bot-desktop.py:861-878
+def stream_handler(message):
+    print(message['data'])
+    
+    if message['data']=="DETENER":
+        db.update({"comando":"OK"})
+        switchoff()
+        
+    if message['data']=="INICIAR":
+        db.update({"comando":"OK"})
+        iniciar()
+        
+    if message['data']=="SCREENSHOT":
+        db.update({"comando":"OK"})
+        enviarSSControlRemoto()
+        
+    if message['data']=="RELOGIN":
+        db.update({"comando":"OK"})
+        reLogin()
+
+my_stream = db.child("comando").stream(stream_handler)
+```
+
+<Accordion title="How Stream Listening Works">
+  The bot uses Firebase's real-time streaming to listen for database changes. When you click a button on the web interface, it updates the `comando` field in Firebase, which immediately triggers the `stream_handler` function on the bot.
+</Accordion>
+
+## Web Control Interface
+
+The remote control panel is a simple HTML interface hosted locally or on any web server:
+
+### HTML Interface
+
+```html
+<!-- COTROL_REMOTO/index.html:29-42 -->
+<div id="center">
+    <div class="row">
+        <div class="col-12 text-center">
+            <button type="button" id="btnDetener" class="btn btn-primary">DETENER</button>
+            <button type="button" id="btnSS" class="btn btn-primary">SCREENSHOT</button>
+            <button type="button" id="btnIniciar" class="btn btn-primary">INICIAR</button>
+        </div>
+    </div>
+</div>
+```
+
+### JavaScript Logic
+
+```javascript
+// COTROL_REMOTO/js/index.js:1-57
+var firebaseConfig = {
+    apiKey: "AIzaSyCO09JciLlqV3N4K7hV90qK_8XBvGBaCLI",
+    authDomain: "fifabot-e4c0b.firebaseapp.com",
+    databaseURL: "https://fifabot-e4c0b.firebaseio.com",
+    projectId: "fifabot-e4c0b",
+    storageBucket: "fifabot-e4c0b.appspot.com",
+    messagingSenderId: "694276584575",
+    appId: "1:694276584575:web:f21f5e813c58849ab8fb4a",
+    measurementId: "G-55C2C3Y9HH"
+};
+
+firebase.initializeApp(firebaseConfig);
+var db = firebase.database();
+
+// Button event listeners
+d3.select("#btnDetener").on("click", detener);
+d3.select("#btnSS").on("click", screenshot);
+d3.select("#btnIniciar").on("click", iniciar);
+
+function detener() {
+    db.ref().set({ comando: "0" });
+    db.ref().set({ comando: "DETENER" });
+}
+
+function screenshot() {
+    db.ref().set({ comando: "0" });
+    db.ref().set({ comando: "SCREENSHOT" });
+}
+
+function iniciar() {
+    db.ref().set({ comando: "0" });
+    db.ref().set({ comando: "INICIAR" });
+}
+```
+
+<Tabs>
+  <Tab title="DETENER Command">
+    **Purpose**: Stops the trading bot gracefully
+    
+    **Process**:
+    1. Sets command to "0" to clear previous state
+    2. Sets command to "DETENER"
+    3. Bot receives command and calls `switchoff()`
+    4. All trading loops are terminated
+    5. Command reset to "OK"
+  </Tab>
+  <Tab title="INICIAR Command">
+    **Purpose**: Starts the automated trading process
+    
+    **Process**:
+    1. Sets command to "0" to clear previous state
+    2. Sets command to "INICIAR"
+    3. Bot receives command and calls `iniciar()`
+    4. Trading loop begins execution
+    5. Command reset to "OK"
+  </Tab>
+  <Tab title="SCREENSHOT Command">
+    **Purpose**: Captures current bot screen and sends via WhatsApp
+    
+    **Process**:
+    1. Sets command to "0" to clear previous state
+    2. Sets command to "SCREENSHOT"
+    3. Bot captures screenshot of FIFA web app
+    4. Image sent to WhatsApp clipboard
+    5. Automatically posted to your configured chat
+  </Tab>
+</Tabs>
+
+## Screenshot Functionality
+
+The remote screenshot feature captures the bot's current state:
+
+```python
+# bot-desktop.py:490-505
+def enviarSSControlRemoto():
+    # Capture screenshot
+    driver.save_screenshot("screenshot.png")
+    filepath = 'screenshot.png'
+    
+    # Convert to clipboard format
+    image = Image.open(filepath)
+    output = BytesIO()
+    image.convert("RGB").save(output, "BMP")
+    data = output.getvalue()[14:]
+    output.close()
+    
+    # Copy to clipboard
+    send_to_clipboard(win32clipboard.CF_DIB, data)
+    
+    # Send via WhatsApp
+    posicionar=driverWhatsapp.find_element_by_xpath("//*[@id='main']/footer/div[1]/div[2]/div/div[2]")
+    posicionar.click()
+    posicionar.send_keys(Keys.CONTROL, 'v')  # Paste
+    time.sleep(3)
+    
+    botonEnviar=driverWhatsapp.find_element_by_xpath("//*[@id='app']/div/div/div[2]/div[2]/span/div/span/div/div/div[2]/span/div/div")
+    botonEnviar.click()
+```
+
+<Card title="Use Cases for Screenshots" icon="camera">
+  - Verify bot is running correctly
+  - Check current market prices
+  - Monitor transfer list status
+  - Diagnose issues remotely
+  - Confirm successful purchases
+</Card>
+
+## Auto Re-Login
+
+The RELOGIN command handles automatic session recovery:
+
+```python
+# bot-desktop.py:887-920
+def reLogin():
+    enviarWhatsapp("EMPEZARON RELOGIN")
+    
+    # Click re-login button
+    boton = driver.find_element_by_xpath("/html/body/div[4]/section/div/div/button/span[1]")
+    boton.click()
+    time.sleep(10)
+    
+    enviarWhatsapp("CLICK A LOGIN")
+    boton2 = driver.find_element_by_xpath('//*[@id="Login"]/div/div/button[1]')
+    boton2.click()
+    time.sleep(10)
+    
+    enviarWhatsapp("INTRODUCIENDO PASSWORD")
+    input=driver.find_element_by_xpath('//*[@id="password"]')
+    input.click()
+    time.sleep(2)
+    input.send_keys(Keys.CONTROL, 'a')
+    time.sleep(1)
+    input.send_keys(Keys.DELETE)
+    time.sleep(1)
+    input.send_keys("Warewolf10")  # Your FIFA password
+    time.sleep(1)
+    
+    enviarWhatsapp("CLICK A ACEPTAR LOGIN")
+    boton3 = driver.find_element_by_xpath('//*[@id="btnLogin"]/span/span')
+    boton3.click()
+    time.sleep(15)
+    
+    # Resume trading
+    enviarWhatsapp("IR A MERCADO DE TRANSFERENCIAS")
+    irMercadoTransferencias()
+    time.sleep(5)
+    
+    enviarWhatsapp("INTRODUCIR FILTROS")
+    selecciones()
+    time.sleep(5)
+    
+    enviarWhatsapp("REVISAR RANGO DE PRECIO")
+    revisarPrecio()
+    
+    enviarWhatsapp("ENVIAR SCREENSHOT")
+    enviarSSControlRemoto()
+```
+
+<Warning>
+  Update the password in `reLogin()` function (line 904) to your actual FIFA account password. Never share your bot code with this password included.
+</Warning>
+
+## Setting Up Remote Control
+
+<Steps>
+  <Step title="Create Firebase Project">
+    1. Go to [Firebase Console](https://console.firebase.google.com/)
+    2. Create a new project
+    3. Enable Realtime Database
+    4. Set database rules to allow read/write (development only)
+  </Step>
+  
+  <Step title="Configure Bot">
+    Update Firebase credentials in `bot-desktop.py` lines 23-28:
+    ```python
+    config = {
+      "apiKey": "YOUR_API_KEY",
+      "authDomain": "YOUR_PROJECT.firebaseapp.com",
+      "databaseURL": "https://YOUR_PROJECT.firebaseio.com",
+      "storageBucket": "YOUR_PROJECT.appspot.com"
+    }
+    ```
+  </Step>
+  
+  <Step title="Configure Web Interface">
+    Update Firebase credentials in `COTROL_REMOTO/js/index.js` lines 1-10 with matching values.
+  </Step>
+  
+  <Step title="Deploy Web Interface">
+    - **Option 1**: Open `index.html` locally in your browser
+    - **Option 2**: Deploy to Firebase Hosting for remote access
+    - **Option 3**: Host on any web server (Netlify, Vercel, etc.)
+  </Step>
+  
+  <Step title="Test Connection">
+    1. Start the bot
+    2. Open the web interface
+    3. Click "SCREENSHOT" to verify communication
+    4. Check WhatsApp for the screenshot
+  </Step>
+</Steps>
+
+## Security Considerations
+
+<Warning>
+  **Important Security Notes:**
+  
+  - Never commit Firebase credentials to public repositories
+  - Use Firebase security rules to restrict database access
+  - Consider implementing authentication for the web interface
+  - Rotate API keys periodically
+  - Use environment variables for sensitive data
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="WhatsApp Notifications" icon="message" href="/features/whatsapp-notifications">
+    Set up WhatsApp to receive bot updates
+  </Card>
+  <Card title="Automated Trading" icon="robot" href="/features/automated-trading">
+    Learn how the trading algorithms work
+  </Card>
+  <Card title="Error Recovery" icon="shield-check" href="/reference/troubleshooting">
+    Handle connection issues and errors
+  </Card>
+  <Card title="Configuration" icon="gear" href="/guides/configuration">
+    Optimize your bot settings
+  </Card>
+</CardGroup>

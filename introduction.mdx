@@ -1,0 +1,180 @@
+---
+title: Introduction
+description: Overview of the FIFA Bot automated trading system for FIFA Ultimate Team
+---
+
+## What is FIFA Bot?
+
+FIFA Bot is an automated trading bot for FIFA Ultimate Team (FUT) that intelligently searches, purchases, and resells players on the transfer market to generate profits. The bot uses Selenium WebDriver to automate interactions with EA's FIFA Web App, continuously monitoring the market for underpriced players.
+
+## Key Capabilities
+
+### Automated Trading
+- **Smart Search**: Continuously searches the transfer market based on customizable filters (league, club, position, nationality, quality, type)
+- **Instant Purchase**: Automatically detects undervalued players and purchases them before competitors
+- **Auto-Listing**: Immediately lists purchased players for resale at profitable prices
+- **Dynamic Pricing**: Adjusts buy/sell prices based on market conditions
+
+### Advanced Features
+- **Price Range Detection**: Automatically finds optimal price ranges by analyzing market depth
+- **Bidding Mode**: Participates in player auctions to secure deals
+- **Profit Calculation**: Accounts for EA's 5% tax on all sales
+- **Multi-Mode Operation**: Switch between "Buy Now" sniping and bidding strategies
+
+### Remote Control
+- **Firebase Integration**: Control the bot remotely through a web interface
+- **WhatsApp Notifications**: Get real-time alerts for purchases, sales, and errors
+- **Screenshot Monitoring**: Receive screenshots of the bot's current state
+- **Remote Commands**: Start, stop, and configure the bot from anywhere
+
+### Monitoring & Notifications
+- **Purchase Alerts**: Notifies you when a player is successfully purchased
+- **Balance Updates**: Tracks your coin balance and sends periodic updates
+- **Error Handling**: Screenshots and notifications when issues occur
+- **Iteration Tracking**: Monitors search cycles and performance metrics
+
+## Architecture Overview
+
+The FIFA Bot consists of three main components:
+
+### 1. Main Bot (`bot-desktop.py`)
+The core automation engine built with Python and Selenium that:
+- Connects to Chrome instances via remote debugging
+- Automates FIFA Web App interactions
+- Executes trading logic and price calculations
+- Manages WhatsApp notifications
+- Provides a Tkinter GUI for local control
+
+```python
+# Chrome debugging connection for FIFA Web App
+opts = Options()
+opts.add_experimental_option('debuggerAddress', 'localhost:9250')
+driver = webdriver.Chrome(options=opts)
+
+# Chrome debugging connection for WhatsApp Web
+optsWhats = Options()
+optsWhats.add_experimental_option('debuggerAddress', 'localhost:9222')
+driverWhatsapp = webdriver.Chrome(options=optsWhats)
+```
+
+### 2. Remote Control Interface (`CONTROL_REMOTO/index.html`)
+A web-based control panel that communicates with the bot via Firebase Realtime Database. Features include:
+- **Start/Stop Controls**: Remotely start and stop the bot
+- **Screenshot Request**: Capture and view the bot's current screen
+- **Re-login Trigger**: Automatically handle session timeouts
+
+```javascript
+// Firebase commands
+function detener() {
+    db.ref().set({ comando: "DETENER" });
+}
+
+function iniciar() {
+    db.ref().set({ comando: "INICIAR" });
+}
+```
+
+### 3. Firebase Backend
+Firebase Realtime Database acts as the communication layer:
+- Receives commands from the web interface
+- Delivers commands to the bot via stream listeners
+- Enables real-time remote control without direct network access
+
+## How It Works
+
+<Steps>
+  <Step title="Setup">
+    Launch two Chrome instances with remote debugging enabled - one for FIFA Web App and one for WhatsApp Web
+  </Step>
+  
+  <Step title="Configuration">
+    Configure search filters (league, position, price range) and profit margins in the bot interface
+  </Step>
+  
+  <Step title="Search">
+    Bot continuously searches the transfer market using your configured filters
+  </Step>
+  
+  <Step title="Detect">
+    When a player appears below your maximum buy price, the bot instantly detects it
+  </Step>
+  
+  <Step title="Purchase">
+    Bot clicks "Buy Now" and confirms the purchase faster than human reaction time
+  </Step>
+  
+  <Step title="List">
+    Automatically lists the player for resale at a profitable price (accounting for EA's 5% tax)
+  </Step>
+  
+  <Step title="Notify">
+    Sends WhatsApp notification with purchase details and updated balance
+  </Step>
+  
+  <Step title="Repeat">
+    Returns to searching for the next opportunity
+  </Step>
+</Steps>
+
+## Prerequisites
+
+Before setting up FIFA Bot, ensure you have:
+
+### Required Software
+- **Python 3.x** - The bot is written in Python
+- **Google Chrome** - Required for web automation
+- **ChromeDriver** - Selenium WebDriver for Chrome (included in the project)
+- **Windows OS** - The batch scripts are Windows-specific
+
+### Required Accounts
+- **EA Account** - With FIFA Ultimate Team access
+- **WhatsApp Account** - For notifications (optional but recommended)
+- **Firebase Account** - For remote control (optional)
+
+### Python Dependencies
+```txt
+selenium
+pyrebase
+tkinter (usually included with Python)
+win32clipboard (pywin32)
+Pillow (PIL)
+```
+
+### Technical Knowledge
+- Basic understanding of Python
+- Familiarity with Chrome DevTools
+- Understanding of FIFA Ultimate Team trading concepts
+
+<Note>
+  This bot is for educational purposes. Using automation tools may violate EA's Terms of Service and could result in account penalties or bans. Use at your own risk.
+</Note>
+
+## Trading Strategy
+
+The bot implements a proven trading strategy:
+
+1. **Target Selection**: Focus on specific player types (e.g., Brazilian/Argentine players, specific leagues)
+2. **Price Analysis**: Set max buy price to ensure profit after EA's 5% tax
+3. **Fast Execution**: Speed is critical - the bot can purchase within milliseconds
+4. **Volume Trading**: Multiple small profits compound over many transactions
+5. **Market Monitoring**: Automatically adjusts price ranges when market shifts
+
+### Example Profit Calculation
+
+```python
+# Bot automatically calculates profitable prices
+precioVenta = 10000  # Selling price
+precioCompra = precioVenta / 1.07  # Max buy price (~9346)
+ganancia = (precioVenta * 0.95) - precioCompra  # Profit after 5% tax (~149 coins)
+```
+
+## Safety Features
+
+- **Balance Verification**: Confirms purchase by checking balance change
+- **Error Recovery**: Automatically returns to search screen on errors
+- **Session Management**: Auto-relogin functionality for expired sessions
+- **Manual Override**: Can stop the bot instantly from GUI, web interface, or WhatsApp
+
+## Next Steps
+
+Ready to set up your FIFA Bot? Continue to the [Quickstart Guide](/quickstart) for step-by-step installation and configuration instructions.

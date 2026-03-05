@@ -1,0 +1,394 @@
+---
+title: Configuration
+description: Configure Firebase, WhatsApp integration, and bot settings
+---
+
+## Firebase Configuration
+
+FIFA Bot uses Firebase for remote control and real-time communication.
+
+<Steps>
+  <Step title="Create Firebase Project">
+    1. Go to [Firebase Console](https://console.firebase.google.com/)
+    2. Create a new project or select an existing one
+    3. Navigate to **Project Settings → General**
+  </Step>
+
+  <Step title="Get Configuration Credentials">
+    Copy your Firebase configuration values:
+
+    <ParamField path="apiKey" type="string" required>
+      Your Firebase API key
+    </ParamField>
+    <ParamField path="authDomain" type="string" required>
+      Your Firebase authentication domain
+    </ParamField>
+    <ParamField path="databaseURL" type="string" required>
+      Your Firebase Realtime Database URL
+    </ParamField>
+    <ParamField path="storageBucket" type="string" required>
+      Your Firebase storage bucket
+    </ParamField>
+  </Step>
+
+  <Step title="Configure in Bot">
+    Update the configuration in `bot-desktop.py`:
+
+    ```python
+    config = {
+      "apiKey": "YOUR_API_KEY",
+      "authDomain": "your-project.firebaseapp.com",
+      "databaseURL": "https://your-project.firebaseio.com",
+      "storageBucket": "your-project.appspot.com"
+    }
+    firebase = pyrebase.initialize_app(config)
+    db = firebase.database()
+    ```
+
+    <Warning>
+      Never share your Firebase credentials publicly. Keep them secure and use environment variables in production.
+    </Warning>
+  </Step>
+
+  <Step title="Initialize Database">
+    The bot automatically initializes the database with a command listener:
+
+    ```python
+    db.update({"comando":"OK"})
+    ```
+
+    This creates a `comando` field for remote control commands.
+  </Step>
+</Steps>
+
+## Chrome Debug Port Configuration
+
+The bot connects to Chrome instances running in debug mode.
+
+<CodeGroup>
+```python FIFA Web App
+# Configure FIFA Web App connection (Port 9250)
+opts = Options()
+opts.add_experimental_option('debuggerAddress', 'localhost:9250')
+driver = webdriver.Chrome(options=opts)
+```
+
+```python WhatsApp Web
+# Configure WhatsApp Web connection (Port 9222)
+optsWhats = Options()
+optsWhats.add_experimental_option('debuggerAddress', 'localhost:9222')
+driverWhatsapp = webdriver.Chrome(options=optsWhats)
+```
+</CodeGroup>
+
+<AccordionGroup>
+  <Accordion title="Port Configuration Details">
+    <ParamField path="9250" type="port">
+      **FIFA Web App** - Main bot connection for market automation
+    </ParamField>
+    <ParamField path="9222" type="port">
+      **WhatsApp Web** - Notification system for purchase alerts
+    </ParamField>
+
+    <Tip>
+      You can change these ports if needed, but ensure they match both the Chrome launch command and bot configuration.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="Custom Port Configuration">
+    To use different ports:
+
+    1. **Launch Chrome with custom port:**
+    ```cmd
+    chrome.exe --remote-debugging-port=9999 --user-data-dir="C:/custom-profile"
+    ```
+
+    2. **Update bot configuration:**
+    ```python
+    opts.add_experimental_option('debuggerAddress', 'localhost:9999')
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## WhatsApp Integration
+
+Configure WhatsApp notifications for purchase alerts and bot status updates.
+
+<Steps>
+  <Step title="Launch WhatsApp Web">
+    1. Start Chrome in debug mode on port 9222
+    2. Navigate to [WhatsApp Web](https://web.whatsapp.com/)
+    3. Scan the QR code with your phone
+  </Step>
+
+  <Step title="Select Notification Contact">
+    Open the chat where you want to receive notifications. The bot will send messages to the first contact in the chat list.
+
+    <Note>
+      The bot uses this XPath to find the contact:
+      ```python
+      '//*[@id="pane-side"]/div[1]/div/div/div/div/div/div[2]/div[2]/div[1]/span/span'
+      ```
+    </Note>
+  </Step>
+
+  <Step title="Enable Notifications in GUI">
+    In the bot GUI, enable WhatsApp features:
+
+    <ParamField path="eW" type="checkbox" default={0}>
+      **Send WhatsApp Messages** - Enable text notifications (eW=1)
+    </ParamField>
+    <ParamField path="eSS" type="checkbox" default={0}>
+      **Send Screenshots** - Enable screenshot notifications (eSS=1)
+    </ParamField>
+  </Step>
+</Steps>
+
+### WhatsApp Notification Types
+
+The bot sends various notifications:
+
+<AccordionGroup>
+  <Accordion title="Purchase Notifications">
+    ```python
+    # Successful purchase
+    "SE COMPRO 1,500 Iteracion: 45"
+
+    # Failed purchase
+    "NO SE COMPRO 1,500 Iteracion: 45"
+
+    # False alarm (item no longer available)
+    "FALSA ALARMA"
+    ```
+  </Accordion>
+
+  <Accordion title="Price Range Updates">
+    ```python
+    # New price range calculated
+    "Nuevo Rango Compra: 1200 Venta: 1500"
+
+    # Search progress
+    "Van 150"
+
+    # Calculating new range
+    "Calculando Rango"
+    ```
+  </Accordion>
+
+  <Accordion title="Status Updates">
+    ```python
+    # Current balance
+    "125.450"
+
+    # Process stopped
+    "PROCESO DETENIDO"
+
+    # Cleaning sold items
+    "Limpiando vendidos"
+
+    # Wait period
+    "ESPERANDO 45 SEGUNDOS"
+    ```
+  </Accordion>
+
+  <Accordion title="Screenshot Notifications">
+    The bot sends screenshots for:
+    - Sold items confirmation
+    - Error situations
+    - Remote control requests
+  </Accordion>
+</AccordionGroup>
+
+## GUI Configuration
+
+The bot provides a Tkinter GUI for configuration and control.
+
+### Control Settings
+
+<ParamField path="Speed Mode" type="radio" default="NORMAL">
+  **NORMAL** - Full delays for safety (rapido=1)
+  
+  **RAPIDO** - Reduced delays for faster operation (rapido=2)
+
+  <Warning>
+    RAPIDO mode may trigger anti-bot detection. Use with caution.
+  </Warning>
+</ParamField>
+
+### Search Interval Settings
+
+<ParamField path="N (itera)" type="number" default={10}>
+  Number of searches before performing an action (cleaning sold items or waiting)
+</ParamField>
+
+<ParamField path="Action Type" type="radio" default={1}>
+  **Option 1 (r=1)** - Clean sold items after N searches
+  
+  **Option 2 (r=2)** - Wait S seconds after N searches
+</ParamField>
+
+<ParamField path="S (segundos)" type="number" default={45}>
+  Seconds to wait when using Option 2
+</ParamField>
+
+### Price Settings
+
+<CodeGroup>
+```python Purchase Price
+# Maximum price to buy (after EA tax calculation)
+maximo = 1200  # Will buy items at this price or below
+```
+
+```python Sale Prices
+# Minimum sale price (starting bid)
+inicial = 1300
+
+# Maximum sale price (Buy Now price)
+final = 1500
+```
+
+```python Profit Tracking
+# Real profit after EA tax (5%)
+iReal = final * 0.95 - maximo
+
+# Expected profit target
+iEsperada = 200
+```
+</CodeGroup>
+
+### Dynamic Range Settings
+
+<ParamField path="eR" type="checkbox" default={0}>
+  **Enable Dynamic Range** - Automatically adjust price ranges based on market (eR=1)
+</ParamField>
+
+<ParamField path="numeroRango" type="number" default={31}>
+  Recalculate price range every X searches when dynamic range is enabled
+</ParamField>
+
+<ParamField path="numeroDetener" type="number" default={1000}>
+  Stop searching when sale price drops below this value
+</ParamField>
+
+## Remote Control Configuration
+
+Control the bot remotely through Firebase commands.
+
+### Supported Commands
+
+<CodeGroup>
+```python Start Bot
+# Send command through Firebase
+db.update({"comando": "INICIAR"})
+
+# Bot will:
+# 1. Start automated searching
+# 2. Send confirmation via WhatsApp
+# 3. Reset command to "OK"
+```
+
+```python Stop Bot
+# Send command through Firebase
+db.update({"comando": "DETENER"})
+
+# Bot will:
+# 1. Stop all operations
+# 2. Send confirmation via WhatsApp
+# 3. Reset command to "OK"
+```
+
+```python Request Screenshot
+# Send command through Firebase
+db.update({"comando": "SCREENSHOT"})
+
+# Bot will:
+# 1. Capture current screen
+# 2. Send via WhatsApp
+# 3. Reset command to "OK"
+```
+
+```python Relogin
+# Send command through Firebase
+db.update({"comando": "RELOGIN"})
+
+# Bot will:
+# 1. Handle session timeout
+# 2. Re-enter credentials
+# 3. Reapply filters
+# 4. Resume operation
+```
+</CodeGroup>
+
+### Command Listener Implementation
+
+```python
+def stream_handler(message):
+    print(message['data'])
+    
+    if message['data'] == "DETENER":
+        db.update({"comando": "OK"})
+        switchoff()
+        
+    if message['data'] == "INICIAR":
+        db.update({"comando": "OK"})
+        iniciar()
+        
+    if message['data'] == "SCREENSHOT":
+        db.update({"comando": "OK"})
+        enviarSSControlRemoto()
+        
+    if message['data'] == "RELOGIN":
+        db.update({"comando": "OK"})
+        reLogin()
+
+# Start listening for commands
+my_stream = db.child("comando").stream(stream_handler)
+```
+
+<Tip>
+  The bot automatically resets commands to "OK" after execution to prevent duplicate processing.
+</Tip>
+
+## Session Management
+
+The bot includes automatic session recovery.
+
+<Steps>
+  <Step title="Detect Session Loss">
+    The bot monitors for session timeout or login prompts.
+  </Step>
+
+  <Step title="Automatic Relogin">
+    ```python
+    def reLogin():
+        # Click through login flow
+        # Re-enter password (hardcoded in example)
+        # Navigate back to transfer market
+        # Reapply search filters
+        # Resume operations
+    ```
+
+    <Warning>
+      The example code contains a hardcoded password. In production, use secure credential storage.
+    </Warning>
+  </Step>
+
+  <Step title="Resume Operations">
+    After relogin, the bot:
+    1. Navigates to transfer market
+    2. Reapplies search filters via `selecciones()`
+    3. Recalculates price range via `revisarPrecio()`
+    4. Sends screenshot confirmation
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Search Filters" icon="filter" href="/guides/search-filters">
+    Configure player search criteria
+  </Card>
+  <Card title="Pricing Strategies" icon="chart-line" href="/guides/pricing-strategies">
+    Optimize profit margins and pricing
+  </Card>
+</CardGroup>

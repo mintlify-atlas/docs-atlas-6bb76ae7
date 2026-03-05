@@ -1,0 +1,518 @@
+---
+title: Search Filters
+description: Configure player search filters to target specific market segments
+---
+
+## Overview
+
+The `selecciones()` function configures search filters on the FIFA Transfer Market. These filters help you target specific player types for automated buying.
+
+<Note>
+  All filters are configured through the bot's GUI and applied via Selenium automation when you click the "Selecciones" button.
+</Note>
+
+## Available Filters
+
+### League Filter (Liga)
+
+Filter players by their league affiliation.
+
+<ParamField path="ligaClicked" type="dropdown" default="Ninguno">
+  Select from 50+ supported leagues worldwide
+</ParamField>
+
+<AccordionGroup>
+  <Accordion title="Supported Leagues">
+    **Major European Leagues:**
+    - Premier League (ING 1)
+    - LaLiga Santander (ESP 1)
+    - Serie A TIM (ITA 1)
+    - Bundesliga (ALE 1)
+    - Ligue 1 Uber Eats (FRA 1)
+
+    **Second Divisions:**
+    - EFL Championship (ING 2)
+    - LaLiga SmartBank (ESP 2)
+    - Calcio B (ITA 2)
+    - Bundesliga 2 (ALE 2)
+    - Ligue 2 BKT (FRA 2)
+
+    **Other European Leagues:**
+    - Eredivisie (HOL 1)
+    - 1A Pro League (BEL 1)
+    - Liga NOS (POR 1)
+    - Scottish Prem (SPFL)
+    - RSL (SUI 1)
+    - Ö. Bundesliga (AUT 1)
+    - Süper Lig (TUR 1)
+    - PKO Ekstraklasa (POL 1)
+    - Liga rusa (RUS 1)
+    - Liga Ucraniana (UCR 1)
+    - Česká Liga (RCH 1)
+    - Hellas Liga (GRE 1)
+    - Liga Hrvatska (CRO 1)
+    - Liga I (RUM 1)
+    - Eliteserien (NOR 1)
+    - Allsvenskan (SUE 1)
+    - 3F Superliga (DIN 1)
+    - Finnliiga (FIN 1)
+    - SSE Airtricity Lge (IRL 1)
+
+    **Americas:**
+    - LIGA BBVA MX (MEX 1)
+    - Liga do Brasil (BRA 1)
+    - Primera División (ARG 1)
+    - MLS (MLS)
+
+    **Asia & Others:**
+    - Meiji Yasuda J1 (JPN 1)
+    - K League 1 (COR 1)
+    - CSL (CHN 1)
+    - MBS Pro League (SAU 1)
+    - United Emirates League (EAU 1)
+    - South African FL (RSA 1)
+    - A-League (AUS 1)
+
+    **Special:**
+    - Libertadores (LIB)
+    - Sudamericana (SUD)
+    - Selección Masc. (INT)
+    - Iconos (ICN)
+    - 3. Liga (ALE 3)
+    - EFL League One (ING 3)
+    - EFL League Two (ING 4)
+  </Accordion>
+
+  <Accordion title="Implementation Details">
+    ```python
+    if ligaClicked.get() == "Ninguno":
+        # Clear league filter
+        liga = driver.find_element_by_xpath(
+            "/html/body/main/section/section/div[2]/div/div[2]/div/div[1]/div[1]/div[7]/div/div"
+        )
+        liga.click()
+        time.sleep(1)
+        # Select "Any" option
+        contieneLiga = driver.find_element_by_xpath(
+            '/html/body/main/section/section/div[2]/div/div[2]/div/div[1]/div[1]/div[7]/div/ul/li[2]'
+        )
+        contieneLiga.click()
+        time.sleep(1)
+        # Remove filter
+        quitarLiga = driver.find_element_by_xpath(
+            "/html/body/main/section/section/div[2]/div/div[2]/div/div[1]/div[1]/div[7]/div/div/button"
+        )
+        quitarLiga.click()
+    else:
+        # Apply specific league filter
+        liga = driver.find_element_by_xpath(
+            "/html/body/main/section/section/div[2]/div/div[2]/div/div[1]/div[1]/div[7]/div/div"
+        )
+        liga.click()
+        time.sleep(1)
+        # Search for league containing the name
+        contieneLiga = driver.find_element_by_xpath(
+            f'/html/body/main/section/section/div[2]/div/div[2]/div/div[1]/div[1]/div[7]/div/ul/li[contains(.,"{ligaClicked.get()}")]'
+        )
+        contieneLiga.click()
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Club Filter (Club)
+
+Filter players by their club team.
+
+<ParamField path="clubEntry" type="text" default="">
+  Enter club name (e.g., "Real Madrid", "Manchester United", "Barcelona")
+  
+  Leave empty to search all clubs.
+</ParamField>
+
+<CodeGroup>
+```python Apply Club Filter
+# Enter club name in GUI text field
+clubEntry.insert(0, "Real Madrid")
+
+# Bot searches for clubs containing the text
+contieneClub = driver.find_element_by_xpath(
+    f'/html/body/main/.../li[contains(.,"{clubEntry.get()}")]'
+)
+```
+
+```python Clear Club Filter
+# Leave field empty
+clubEntry.delete(0, END)
+
+# Bot selects "Any" option and removes filter
+```
+</CodeGroup>
+
+<Tip>
+  Use partial names for better matching. "Real" will match "Real Madrid", "Real Sociedad", etc.
+</Tip>
+
+### Quality Filter (Calidad)
+
+Filter by card quality (rarity tier).
+
+<ParamField path="calidadClicked" type="dropdown" default="Ninguno">
+  **Oro** - Gold cards (75-99 rating)
+  
+  **Plata** - Silver cards (65-74 rating)
+  
+  **Bronce** - Bronze cards (1-64 rating)
+  
+  **Especial** - Special edition cards (TOTW, TOTY, etc.)
+  
+  **Ninguno** - All quality levels
+</ParamField>
+
+<AccordionGroup>
+  <Accordion title="Quality Strategy Tips">
+    **Gold Cards:**
+    - Higher volume, competitive market
+    - Good for high-value flipping
+    - More bots competing
+
+    **Silver Cards:**
+    - League SBC targets
+    - Lower competition
+    - Volatile pricing
+
+    **Bronze Cards:**
+    - Low profit per card
+    - High volume potential
+    - SBC fodder opportunities
+
+    **Special Cards:**
+    - High profit potential
+    - Lower volume
+    - Requires market knowledge
+  </Accordion>
+</AccordionGroup>
+
+### Card Type Filter (Tipo)
+
+Filter by card type or special edition.
+
+<ParamField path="tipoClicked" type="dropdown" default="Ninguno">
+  **Comunes** - Regular/Common cards
+  
+  **Únicos** - Unique/Rare cards
+  
+  **Comun de la UCL** - Common UCL cards
+  
+  **Único de la UCL** - Rare UCL cards
+  
+  **CONMEBOL LIBERTADORES** - Libertadores special cards
+  
+  **CONMEBOL SUDAMERICANA** - Sudamericana special cards
+  
+  **Icono** - Icon cards (legends)
+  
+  **Promesas** - Future Stars cards
+  
+  **Ninguno** - All card types
+</ParamField>
+
+<Note>
+  Special card types often have unique market dynamics. Icons and special editions typically require higher budgets.
+</Note>
+
+### Position Filter (Posicion)
+
+Filter by player position on the field.
+
+<ParamField path="posicionClicked" type="dropdown" default="Ninguno">
+  **Goalkeepers:**
+  - POR - Goalkeeper (Portero)
+
+  **Defenders:**
+  - CAD - Center Back (Central Defensa)
+  - LD - Right Back (Lateral Derecho)
+  - LI - Left Back (Lateral Izquierdo)
+  - DFC - Center Back variant
+
+  **Midfielders:**
+  - MCD - Defensive Midfielder (Mediocentro Defensivo)
+  - MC - Center Midfielder (Mediocentro)
+  - MD - Right Midfielder (Mediocentro Derecho)
+  - MI - Left Midfielder (Mediocentro Izquierdo)
+  - MCO - Center Midfielder variant
+  - CAI - Attacking Midfielder (Centrocampista Atacante Izquierdo)
+
+  **Forwards:**
+  - SDD - Right Striker (Segundo Delantero Derecho)
+  - SD - Striker (Segundo Delantero)
+  - SDI - Left Striker (Segundo Delantero Izquierdo)
+  - ED - Right Winger (Extremo Derecho)
+  - DC - Center Forward (Delantero Centro)
+  - EI - Left Winger (Extremo Izquierdo)
+
+  **Ninguno** - All positions
+</ParamField>
+
+<AccordionGroup>
+  <Accordion title="Position-Based Strategies">
+    **High-Demand Positions:**
+    - DC (Strikers) - Always in demand
+    - MCD (CDMs) - Meta positions
+    - CAD (CBs) - Squad Building essentials
+
+    **Niche Positions:**
+    - POR (GK) - Lower competition
+    - LD/LI (Fullbacks) - SBC specific
+    - ED/EI (Wingers) - Formation dependent
+
+    <Tip>
+      Target less popular positions during SBC releases for higher profit margins.
+    </Tip>
+  </Accordion>
+</AccordionGroup>
+
+### Nationality Filter (Nacionalidad)
+
+Filter by player nationality.
+
+<ParamField path="nacionalidadEntry" type="text" default="">
+  Enter nationality in Spanish (e.g., "Brasil", "Argentina", "España", "Francia")
+  
+  Leave empty to search all nationalities.
+</ParamField>
+
+<CodeGroup>
+```python Common Nationalities
+# Major football nations
+nacionalidadEntry.insert(0, "Brasil")
+nacionalidadEntry.insert(0, "Argentina")
+nacionalidadEntry.insert(0, "Francia")
+nacionalidadEntry.insert(0, "España")
+nacionalidadEntry.insert(0, "Inglaterra")
+nacionalidadEntry.insert(0, "Alemania")
+nacionalidadEntry.insert(0, "Italia")
+nacionalidadEntry.insert(0, "Portugal")
+```
+
+```python Bidding Mode Auto-Switch
+# For bidding mode, bot alternates between countries
+def cambiarPais():
+    if nacionalidadEntry.get() == "Brasil":
+        nacionalidadEntry.delete(0, END)
+        nacionalidadEntry.insert(0, "Argentina")
+    elif nacionalidadEntry.get() == "Argentina":
+        nacionalidadEntry.delete(0, END)
+        nacionalidadEntry.insert(0, "Brasil")
+```
+</CodeGroup>
+
+<Note>
+  Nationality filter uses Spanish names as they appear in the FIFA Web App. Use exact spelling for best results.
+</Note>
+
+## Applying Filters
+
+<Steps>
+  <Step title="Configure Filters in GUI">
+    Set your desired filters in the bot interface:
+    
+    ```python
+    # Example configuration
+    ligaClicked.set("Premier League (ING 1)")
+    clubEntry.insert(0, "")
+    calidadClicked.set("Oro")
+    tipoClicked.set("Comunes")
+    posicionClicked.set("DC")
+    nacionalidadEntry.insert(0, "")
+    ```
+  </Step>
+
+  <Step title="Click Selecciones Button">
+    Press the "Selecciones" button in the GUI to apply filters to the FIFA Web App.
+
+    <Note>
+      The bot navigates through FIFA's UI and applies each filter with appropriate delays.
+    </Note>
+  </Step>
+
+  <Step title="Verify Filter Application">
+    The bot will:
+    1. Click each filter dropdown
+    2. Search for matching options using `contains()` XPath
+    3. Select or clear filters based on configuration
+    4. Wait for UI updates between actions
+  </Step>
+</Steps>
+
+## Filter Combinations
+
+Strategic filter combinations for different market strategies:
+
+<AccordionGroup>
+  <Accordion title="High Volume Strategy">
+    ```python
+    # Target common gold cards in major leagues
+    ligaClicked.set("Premier League (ING 1)")
+    clubEntry.insert(0, "")  # Any club
+    calidadClicked.set("Oro")
+    tipoClicked.set("Comunes")
+    posicionClicked.set("Ninguno")  # Any position
+    nacionalidadEntry.insert(0, "")
+    ```
+
+    **Pros:** Many listings, consistent demand
+    
+    **Cons:** High competition, lower margins
+  </Accordion>
+
+  <Accordion title="Niche Market Strategy">
+    ```python
+    # Target specific league + position combinations
+    ligaClicked.set("Eredivisie (HOL 1)")
+    clubEntry.insert(0, "")
+    calidadClicked.set("Plata")
+    tipoClicked.set("Comunes")
+    posicionClicked.set("LI")  # Left backs
+    nacionalidadEntry.insert(0, "")
+    ```
+
+    **Pros:** Lower competition, higher margins
+    
+    **Cons:** Lower volume, requires patience
+  </Accordion>
+
+  <Accordion title="SBC Snipe Strategy">
+    ```python
+    # Target SBC fodder from specific clubs
+    ligaClicked.set("LaLiga Santander (ESP 1)")
+    clubEntry.insert(0, "Real Madrid")
+    calidadClicked.set("Oro")
+    tipoClicked.set("Comunes")
+    posicionClicked.set("Ninguno")
+    nacionalidadEntry.insert(0, "")
+    ```
+
+    **Pros:** Spike demand during SBCs
+    
+    **Cons:** Timing dependent, volatile
+  </Accordion>
+
+  <Accordion title="Icon Flip Strategy">
+    ```python
+    # Target Icon cards
+    ligaClicked.set("Iconos (ICN)")
+    clubEntry.insert(0, "")
+    calidadClicked.set("Ninguno")  # Icons have special quality
+    tipoClicked.set("Icono")
+    posicionClicked.set("DC")  # High-demand position
+    nacionalidadEntry.insert(0, "")
+    ```
+
+    **Pros:** High profit per card
+    
+    **Cons:** Requires large budget, slower turnover
+  </Accordion>
+
+  <Accordion title="Wide Net Strategy">
+    ```python
+    # Minimal filters, rely on price range
+    ligaClicked.set("Ninguno")
+    clubEntry.insert(0, "")
+    calidadClicked.set("Oro")
+    tipoClicked.set("Comunes")
+    posicionClicked.set("Ninguno")
+    nacionalidadEntry.insert(0, "")
+    ```
+
+    **Pros:** Maximum opportunities
+    
+    **Cons:** Less targeted, inconsistent quality
+  </Accordion>
+</AccordionGroup>
+
+## Filter Performance Tips
+
+<CardGroup cols={2}>
+  <Card title="Reduce Competition" icon="users-slash">
+    - Use less popular leagues
+    - Filter by specific clubs
+    - Target off-meta positions
+    - Search during off-peak hours
+  </Card>
+  
+  <Card title="Maximize Volume" icon="chart-line">
+    - Broader filters (fewer restrictions)
+    - Major leagues only
+    - Common card types
+    - Popular positions
+  </Card>
+  
+  <Card title="Optimize Profit" icon="dollar-sign">
+    - Special card types
+    - SBC-relevant filters
+    - Dynamic price ranges
+    - Quality over quantity
+  </Card>
+  
+  <Card title="Market Research" icon="magnifying-glass-chart">
+    - Test different combinations
+    - Monitor success rates
+    - Adjust based on market trends
+    - Track profit per filter set
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Filter not applying correctly">
+    **Issue:** Bot clicks filter but doesn't select option
+
+    **Solutions:**
+    - Increase `time.sleep()` delays in `selecciones()`
+    - Verify filter names match exactly (case-sensitive)
+    - Check for FIFA Web App UI updates
+    - Ensure Chrome window is in focus
+  </Accordion>
+
+  <Accordion title="XPath errors">
+    **Issue:** `NoSuchElementException` when applying filters
+
+    **Solutions:**
+    - FIFA may have updated their HTML structure
+    - Inspect current XPaths using Chrome DevTools
+    - Update XPath selectors in code
+    - Ensure page is fully loaded before applying filters
+  </Accordion>
+
+  <Accordion title="No results with current filters">
+    **Issue:** Search returns zero items
+
+    **Solutions:**
+    - Broaden filter criteria
+    - Verify price range is realistic
+    - Check that selected filters exist in current FIFA version
+    - Try removing nationality or club filters
+  </Accordion>
+
+  <Accordion title="Filters reset between searches">
+    **Issue:** Filters don't persist across searches
+
+    **Solutions:**
+    - Reapply filters via `selecciones()` after each search cycle
+    - Check for FIFA session timeouts
+    - Ensure bot doesn't navigate away from search screen
+    - Verify Chrome session persistence
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Pricing Strategies" icon="chart-line" href="/guides/pricing-strategies">
+    Configure optimal buy and sell prices
+  </Card>
+  <Card title="Core Features" icon="star" href="/features/automated-trading">
+    Learn about automated buying and selling
+  </Card>
+</CardGroup>

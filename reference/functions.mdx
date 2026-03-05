@@ -1,0 +1,998 @@
+---
+title: 'Function Reference'
+description: 'Complete reference for all FIFA Bot functions'
+icon: 'code'
+---
+
+## Search Functions
+
+Functions related to searching the transfer market.
+
+### clickBuscar()
+
+Clicks the search button in the transfer market.
+
+<ParamField path="none" type="void">
+  No parameters required
+</ParamField>
+
+**Returns:** `None`
+
+**XPath:** `/html/body/main/section/section/div[2]/div/div[2]/div/div[2]/button[2]`
+
+**Usage:**
+```python
+clickBuscar()
+```
+
+---
+
+### clickEncontrado()
+
+Clicks the first found element if it exists and initiates purchase.
+
+<ParamField path="none" type="void">
+  No parameters required
+</ParamField>
+
+**Returns:** `None`
+
+**Behavior:**
+- Checks if elements exist in search results
+- Extracts price from first element
+- Calls `comprar()` function automatically
+
+**XPath:** `/html/body/main/section/section/div[2]/div/div/section[1]/div/ul/li/div`
+
+---
+
+### buscarRango()
+
+Automatically searches for optimal price range based on market availability.
+
+<ParamField path="none" type="void">
+  Uses global variables: `final`, `maximo`, `inicial`, `iEsperada`
+</ParamField>
+
+**Returns:** `None`
+
+**Algorithm:**
+1. Starts with current sale price (`final.get()`)
+2. Searches for items at that price
+3. If no items found, increases price incrementally:
+   - < 1000: +50 coins
+   - < 10000: +100 coins
+   - < 50000: +500 coins
+   - ≥ 50000: +500 coins
+4. If too many items (>4), decreases price
+5. When optimal range found (≤4 items), calculates:
+   - Buy price: `(salePrice * 0.95) - expectedProfit`
+   - Updates UI fields
+   - Sends WhatsApp notification
+
+**Example:**
+```python
+buscarRango()
+# Sends: "Nuevo Rango Compra: 4500 Venta: 5000"
+```
+
+---
+
+### revisarPrecio()
+
+Reviews and updates price ranges based on current market conditions.
+
+<ParamField path="none" type="void">
+  Uses global variables: `final`, `maximo`, `inicial`, `iEsperada`
+</ParamField>
+
+**Returns:** `None`
+
+**Difference from buscarRango():**
+- Uses expected profit (`iEsperada`) for calculations
+- Does not send WhatsApp notifications
+- Formula: `maxPrice = (salePrice * 0.95) - expectedProfit`
+
+---
+
+## Purchase Functions
+
+Functions for buying and listing items.
+
+### comprar()
+
+Purchases an item and automatically lists it on the market.
+
+<ParamField path="none" type="void">
+  Uses global variables: `mWhats`, `iteraciones`, `inicial`, `final`
+</ParamField>
+
+**Returns:** `None`
+
+**Process:**
+1. Captures initial balance
+2. Clicks buy button
+3. Confirms purchase in popup
+4. Waits 5 seconds
+5. Verifies balance changed (confirms purchase)
+6. Sends WhatsApp notification with iteration count
+7. Calls `ponerMercado()` and `definirPrecio()`
+8. If balance unchanged, sends "NO SE COMPRO" message
+
+**Error Handling:**
+```python
+try:
+    # Purchase logic
+except:
+    print("ERROR EN COMPRAR")
+```
+
+---
+
+### ponerMercado()
+
+Clicks the button to list a purchased item on the market.
+
+<ParamField path="none" type="void">
+  No parameters required
+</ParamField>
+
+**Returns:** `None`
+
+**XPath:** `/html/body/main/section/section/div[2]/div/div/section[2]/div/div/div[2]/div[2]/div[1]/button`
+
+---
+
+### definirPrecio()
+
+Sets the initial and final selling prices for a purchased item.
+
+<ParamField path="none" type="void">
+  Uses global variables: `inicial`, `final`
+</ParamField>
+
+**Returns:** `None`
+
+**Process:**
+1. Checks if price input fields exist
+2. Sets minimum price from `inicial` field
+3. Sets maximum price from `final` field
+4. Clicks "List on Market" button
+5. If fields don't exist, prints "FALSA ALARMA"
+
+---
+
+## Navigation Functions
+
+Functions for navigating the FIFA Web App.
+
+### clickRegresar()
+
+Returns to the transfer market search screen.
+
+<ParamField path="none" type="void">
+  No parameters required
+</ParamField>
+
+**Returns:** `None`
+
+**XPath:** `/html/body/main/section/section/div[1]/button[1]`
+
+---
+
+### irMercadoTransferencias()
+
+Navigates to the transfer market from any screen.
+
+<ParamField path="none" type="void">
+  No parameters required
+</ParamField>
+
+**Returns:** `None`
+
+**Process:**
+1. Clicks transfer menu button
+2. Waits 5 seconds
+3. Clicks market search option
+
+---
+
+## Inventory Management Functions
+
+Functions for managing sold items and inventory.
+
+### limpiarvendidos()
+
+Clears sold items from the transfer list and checks balance.
+
+<ParamField path="none" type="void">
+  No parameters required
+</ParamField>
+
+**Returns:** `None`
+
+**Process:**
+1. Opens transfer menu
+2. Navigates to items section
+3. If sold items exist:
+   - Sends screenshot via WhatsApp
+   - Clicks clear button
+4. Returns to market search
+5. Sends current balance via WhatsApp
+
+**Usage:**
+```python
+limpiarvendidos()
+# Sends screenshot + current balance to WhatsApp
+```
+
+---
+
+### limpiarvendidosBID()
+
+Clears sold items when using bidding mode (no WhatsApp notification).
+
+<ParamField path="none" type="void">
+  No parameters required
+</ParamField>
+
+**Returns:** `None`
+
+**Difference from limpiarvendidos():**
+- Does not send WhatsApp messages
+- Does not check balance
+- Designed for bidding workflow
+
+---
+
+## WhatsApp Functions
+
+Functions for sending notifications via WhatsApp Web.
+
+### enviarWhatsapp(mensaje)
+
+Sends a text message to WhatsApp.
+
+<ParamField path="mensaje" type="string" required>
+  The message text to send
+</ParamField>
+
+**Returns:** `None`
+
+**Requirements:**
+- WhatsApp Web must be open in Chrome on port 9222
+- `eW` checkbox must be enabled (eW=1)
+- First chat must be the target contact
+
+**Process:**
+1. Checks if WhatsApp is enabled (`eW.get() == 1`)
+2. Clicks first chat in sidebar
+3. Clicks message input field
+4. Types message
+5. Clicks send button
+
+**Example:**
+```python
+enviarWhatsapp("SE COMPRO 5000 Iteracion: 42")
+```
+
+<Warning>
+The bot always sends to the **first chat** in your WhatsApp sidebar. Make sure the correct contact is pinned to the top.
+</Warning>
+
+---
+
+### enviarScreenshot()
+
+Captures a screenshot of FIFA Web App and sends it via WhatsApp.
+
+<ParamField path="none" type="void">
+  No parameters required
+</ParamField>
+
+**Returns:** `None`
+
+**Requirements:**
+- `eSS` checkbox must be enabled (eSS=1)
+- WhatsApp Web must be open
+
+**Process:**
+1. Saves screenshot as `screenshot.png`
+2. Converts to BMP format
+3. Copies to Windows clipboard
+4. Calls `enviarImagenWhatsapp()`
+
+---
+
+### enviarImagenWhatsapp()
+
+Pastes image from clipboard and sends it via WhatsApp.
+
+<ParamField path="none" type="void">
+  Requires image in clipboard
+</ParamField>
+
+**Returns:** `None`
+
+**Process:**
+1. Clicks first chat
+2. Clicks message input
+3. Pastes image (Ctrl+V)
+4. Waits 3 seconds
+5. Clicks send button
+
+---
+
+### enviarSSControlRemoto()
+
+Sends screenshot for remote control commands (always enabled).
+
+<ParamField path="none" type="void">
+  Does not check eSS flag
+</ParamField>
+
+**Returns:** `None`
+
+**Usage:** Called by Firebase remote control commands.
+
+---
+
+## Bidding Functions
+
+Functions for automated bidding on players.
+
+### recorrerBid(objetivos)
+
+Iterates through search results and bids on items below maximum price.
+
+<ParamField path="objetivos" type="int" required>
+  Number of target items to bid on (typically 50 - current objectives)
+</ParamField>
+
+**Returns:** `None`
+
+**Algorithm:**
+1. Calculates bids needed: `50 - objetivos`
+2. Loops through 20 items per page
+3. For each item:
+   - Checks current bid price
+   - If price is "---" (no bids) or < `maximo`, bids
+   - Handles "too many bids" error (sleeps 300s)
+4. Moves to next page
+5. Stops when target bids reached
+
+**Example:**
+```python
+recorrerBid(45)  # Will place 5 bids
+```
+
+<Warning>
+If you reach the bid limit, the bot will wait 300 seconds (5 minutes) before continuing.
+</Warning>
+
+---
+
+### clickPujar()
+
+Clicks the bid button on the current item.
+
+<ParamField path="none" type="void">
+  No parameters required
+</ParamField>
+
+**Returns:** `None`
+
+**XPath:** `/html/body/main/section/section/div[2]/div/div/section[2]/div/div/div[2]/div[2]/button[1]`
+
+---
+
+### clickSiguiente()
+
+Clicks the next page button in search results.
+
+<ParamField path="none" type="void">
+  No parameters required
+</ParamField>
+
+**Returns:** `None`
+
+**XPath:** `/html/body/main/section/section/div[2]/div/div/section[1]/div/div/button[2]`
+
+---
+
+### bidding()
+
+Main bidding loop that automates the entire bidding process.
+
+<ParamField path="none" type="void">
+  Uses global variables: `nacionalidadEntry`, `inicial`, `final`
+</ParamField>
+
+**Returns:** `None`
+
+**Process:**
+1. Opens transfers menu
+2. Checks current objective count
+3. Navigates to market search
+4. Sets country filter (alternates between countries)
+5. Searches for items
+6. Calls `recorrerBid()` to place bids
+7. Calls `limpiarvendidosBID()` to clear sold items
+8. Calls `borrarcaducos()` to remove expired bids
+9. Calls `ponerenVentaBid()` to list won items
+10. Waits 300 seconds
+11. Repeats loop
+
+**Usage:**
+```python
+bidding()
+# Runs in separate thread
+```
+
+---
+
+### ponerenVentaBid()
+
+Lists all won bid items on the transfer market.
+
+<ParamField path="none" type="void">
+  Uses global variables: `inicial`, `final`
+</ParamField>
+
+**Returns:** `None`
+
+**Process:**
+1. Counts items in "Won Items" section
+2. For each item:
+   - Clicks item
+   - Clicks "List on Market"
+   - Sets initial price from `inicial`
+   - Sets final price from `final`
+   - Confirms listing
+3. Repeats until no items remain
+
+---
+
+### borrarcaducos()
+
+Removes expired (unsuccessful) bids from objectives.
+
+<ParamField path="none" type="void">
+  No parameters required
+</ParamField>
+
+**Returns:** `None`
+
+**Process:**
+1. Opens transfers menu
+2. Opens objectives section
+3. If expired bids exist, clicks clear button
+4. Prints "NO CADUCOS" if none found
+
+---
+
+## Filter Functions
+
+Functions for setting search filters.
+
+### selecciones()
+
+Applies all search filters from UI inputs.
+
+<ParamField path="none" type="void">
+  Uses global variables: `ligaClicked`, `clubEntry`, `calidadClicked`, `tipoClicked`, `posicionClicked`, `nacionalidadEntry`
+</ParamField>
+
+**Returns:** `None`
+
+**Filters Applied:**
+
+<Accordion title="League Filter">
+  - Opens league dropdown
+  - Searches for league name (e.g., "Premier League (ING 1)")
+  - If "Ninguno", clears filter
+</Accordion>
+
+<Accordion title="Club Filter">
+  - Opens club dropdown
+  - Types club name
+  - If empty string, clears filter
+</Accordion>
+
+<Accordion title="Quality Filter">
+  - Options: Oro, Plata, Bronce, Especial
+  - If "Ninguno", clears filter
+</Accordion>
+
+<Accordion title="Type Filter">
+  - Options: Comunes, Únicos, UCL cards, Icons, etc.
+  - If "Ninguno", clears filter
+</Accordion>
+
+<Accordion title="Position Filter">
+  - Options: POR, CAD, LD, DFC, LI, MC, etc.
+  - If "Ninguno", clears filter
+</Accordion>
+
+<Accordion title="Nationality Filter">
+  - Opens country dropdown
+  - Searches for country name
+  - If empty string, clears filter
+</Accordion>
+
+**Example:**
+```python
+# Set filters in UI first
+ligaClicked.set("Premier League (ING 1)")
+clubEntry.insert(0, "Manchester City")
+calidadClicked.set("Oro")
+
+# Apply filters
+selecciones()
+```
+
+---
+
+### cambiarPais()
+
+Alternates country filter between Brasil and Argentina.
+
+<ParamField path="none" type="void">
+  Uses global variable: `nacionalidadEntry`
+</ParamField>
+
+**Returns:** `None`
+
+**Behavior:**
+- If current = "Brasil", changes to "Argentina"
+- If current = "Argentina", changes to "Brasil"
+- Used by bidding mode to diversify searches
+
+---
+
+## Authentication Functions
+
+Functions for handling login and session management.
+
+### reLogin()
+
+Automatically re-authenticates when session expires.
+
+<ParamField path="none" type="void">
+  Hardcoded password: "Warewolf10"
+</ParamField>
+
+**Returns:** `None`
+
+**Process:**
+1. Sends WhatsApp: "EMPEZARON RELOGIN"
+2. Clicks session expired button
+3. Waits 10 seconds
+4. Clicks login button
+5. Enters password (clears field first)
+6. Clicks accept
+7. Waits 15 seconds
+8. Navigates to transfer market
+9. Applies filters with `selecciones()`
+10. Reviews price with `revisarPrecio()`
+11. Sends screenshot
+
+<Warning>
+**Security Risk:** Password is hardcoded in plaintext. In production, use environment variables or secure credential storage.
+</Warning>
+
+**Usage:**
+```python
+reLogin()
+# Called automatically by Firebase remote control
+```
+
+---
+
+## Price Manipulation Functions
+
+Functions for adjusting search prices.
+
+### precioMaximoBusqueda()
+
+Sets the maximum search price from UI input.
+
+<ParamField path="none" type="void">
+  Uses global variable: `maximo`
+</ParamField>
+
+**Returns:** `None`
+
+**Process:**
+1. Clicks max price input field
+2. Types value from `maximo` entry
+
+---
+
+### aumentaMinimoCompraYa()
+
+Increases the minimum "Buy Now" price by one increment.
+
+<ParamField path="none" type="void">
+  No parameters required
+</ParamField>
+
+**Returns:** `None`
+
+**XPath:** `/html/body/main/section/section/div[2]/div/div[2]/div/div[1]/div[2]/div[5]/div[2]/button[2]`
+
+---
+
+### disminuyeMinimoCompraYa()
+
+Decreases the minimum "Buy Now" price by 3 increments.
+
+<ParamField path="none" type="void">
+  No parameters required
+</ParamField>
+
+**Returns:** `None`
+
+**Behavior:** Clicks decrease button 3 times in a loop.
+
+---
+
+### Mas1ClickMaximo()
+
+Increases maximum price by one increment (with delay in fast mode).
+
+<ParamField path="none" type="void">
+  Checks global variable: `rapido`
+</ParamField>
+
+**Returns:** `None`
+
+**Delay:** 2 seconds if `rapido.get() == 1`
+
+---
+
+### Menos1ClickMaximo()
+
+Decreases maximum price by one increment (with delay in fast mode).
+
+<ParamField path="none" type="void">
+  Checks global variable: `rapido`
+</ParamField>
+
+**Returns:** `None`
+
+**Delay:** 2 seconds if `rapido.get() == 1`
+
+---
+
+## Control Functions
+
+Functions for starting, stopping, and managing the bot.
+
+### iniciar()
+
+Starts the main bot loop.
+
+<ParamField path="none" type="void">
+  Uses global variables: `seguir`, `switch`, `iteraciones`, `cuantos`
+</ParamField>
+
+**Returns:** `None`
+
+**Process:**
+1. Displays current balance
+2. Sets `switch = True`
+3. Calls `precioMaximoBusqueda()`
+4. Starts run loop in separate thread:
+   - Increments iteration counter
+   - Every N iterations (from `numeroRango`):
+     - Sends progress via WhatsApp
+     - Calls `revisarPrecio()`
+   - Every `itera` iterations:
+     - Calls `limpiarvendidos()` or waits S seconds
+   - Alternates `aumentaMinimoCompraYa()` / `disminuyeMinimoCompraYa()`
+   - Calls `clickBuscar()`, `clickEncontrado()`, `clickRegresar()`
+5. On exception, attempts recovery:
+   - Calls `irMercadoTransferencias()`
+   - Restarts loop
+
+**Example:**
+```python
+iniciar()
+# Bot runs in background thread
+```
+
+---
+
+### switchoff()
+
+Stops the bot gracefully.
+
+<ParamField path="none" type="void">
+  Sets global variables: `switch`, `switchBid`
+</ParamField>
+
+**Returns:** `None`
+
+**Behavior:**
+- Sets `switch = False`
+- Sets `switchBid = False`
+- Bot loop checks these flags and exits
+
+---
+
+### switchon()
+
+Enables the bot switch (does not start bot).
+
+<ParamField path="none" type="void">
+  Sets global variable: `switch`
+</ParamField>
+
+**Returns:** `None`
+
+**Note:** This only sets the flag. Call `iniciar()` to actually start the bot.
+
+---
+
+### stop()
+
+Stops the bot loop by setting `seguir = False`.
+
+<ParamField path="none" type="void">
+  Sets global variable: `seguir`
+</ParamField>
+
+**Returns:** `None`
+
+---
+
+## Remote Control Functions
+
+Functions for Firebase-based remote control.
+
+### stream_handler(message)
+
+Handles Firebase real-time database commands.
+
+<ParamField path="message" type="dict" required>
+  Firebase message containing command in `message['data']`
+</ParamField>
+
+**Returns:** `None`
+
+**Supported Commands:**
+
+| Command | Action |
+|---------|--------|
+| `DETENER` | Calls `switchoff()` |
+| `INICIAR` | Calls `iniciar()` |
+| `SCREENSHOT` | Calls `enviarSSControlRemoto()` |
+| `RELOGIN` | Calls `reLogin()` |
+
+**Setup:**
+```python
+my_stream = db.child("comando").stream(stream_handler)
+```
+
+**Usage:**
+Update Firebase database with:
+```json
+{"comando": "SCREENSHOT"}
+```
+
+<Info>
+After executing each command, the bot resets the command to "OK" to prevent duplicate execution.
+</Info>
+
+---
+
+### close_window()
+
+Cleanup function called when closing the application.
+
+<ParamField path="none" type="void">
+  No parameters required
+</ParamField>
+
+**Returns:** `None`
+
+**Process:**
+1. Calls `switchoff()` to stop bot
+2. Closes Firebase stream (`my_stream.close()`)
+3. Destroys Tkinter window (`root.destroy()`)
+
+---
+
+## Utility Functions
+
+### send_to_clipboard(clip_type, data)
+
+Copies data to Windows clipboard.
+
+<ParamField path="clip_type" type="int" required>
+  Clipboard format (e.g., `win32clipboard.CF_DIB` for images)
+</ParamField>
+
+<ParamField path="data" type="bytes" required>
+  Binary data to copy
+</ParamField>
+
+**Returns:** `None`
+
+**Process:**
+1. Opens clipboard
+2. Empties existing content
+3. Sets new data
+4. Closes clipboard
+
+**Example:**
+```python
+send_to_clipboard(win32clipboard.CF_DIB, image_data)
+```
+
+---
+
+### detener()
+
+Pauses bot execution when specific WhatsApp message is detected.
+
+<ParamField path="none" type="void">
+  Monitors WhatsApp for pause message
+</ParamField>
+
+**Returns:** `None`
+
+**Behavior:**
+- Checks for specific message in WhatsApp
+- Sends "PROCESO DETENIDO" notification
+- Enters wait loop (checks every 5 seconds)
+- Resumes when message disappears
+
+<Warning>
+**Note:** This function references a specific XPath that may not exist in current code. It appears to be legacy or incomplete functionality.
+</Warning>
+
+---
+
+## Global Variables Reference
+
+### User Interface Variables
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `maximo` | Entry | Maximum buy price |
+| `inicial` | Entry | Minimum sell price |
+| `final` | Entry | Maximum sell price |
+| `iEsperada` | Entry | Expected profit |
+| `iReal` | Entry | Real profit |
+| `itera` | Entry | Iterations before action (default: 10) |
+| `segundos` | Entry | Wait seconds (default: 45) |
+| `numeroRango` | Entry | Iterations before price check (default: 31) |
+
+### Control Variables
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `seguir` | bool | Main loop control |
+| `switch` | bool | Bot enabled flag |
+| `switchBid` | bool | Bidding mode flag |
+| `iteraciones` | int | Current iteration count |
+| `cuantos` | int | Counter for range checks |
+
+### Mode Variables
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `r` | IntVar | Action mode (1=clear sold, 2=wait) |
+| `rapido` | IntVar | Speed mode (1=normal, 2=fast) |
+| `eW` | IntVar | Enable WhatsApp (1=on, 0=off) |
+| `eSS` | IntVar | Enable screenshots (1=on, 0=off) |
+| `eR` | IntVar | Enable range search (1=on, 0=off) |
+
+### Filter Variables
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `ligaClicked` | StringVar | Selected league |
+| `clubEntry` | Entry | Club name |
+| `calidadClicked` | StringVar | Quality (Oro/Plata/Bronce) |
+| `tipoClicked` | StringVar | Card type |
+| `posicionClicked` | StringVar | Position |
+| `nacionalidadEntry` | Entry | Nationality |
+
+---
+
+## Code Architecture
+
+### Threading Model
+
+The bot uses Python's `threading` module to run operations concurrently:
+
+```python
+thread = threading.Thread(target=run)
+thread.start()
+```
+
+**Main Thread:** Tkinter UI event loop  
+**Worker Thread:** Bot automation loop  
+**Firebase Thread:** Real-time database listener
+
+### Error Handling Strategy
+
+1. **Try-Except Blocks:** Wrap critical operations
+2. **Recovery Logic:** Attempt to navigate back to transfer market
+3. **WhatsApp Notifications:** Alert user on errors with screenshots
+4. **Graceful Degradation:** Print error, send notification, continue
+
+**Example:**
+```python
+try:
+    # Main bot loop
+except Exception:
+    if r.get() == 1:
+        irMercadoTransferencias()
+        iteraciones = 0
+        run()  # Restart
+    else:
+        enviarWhatsapp("ALGO OCURRIO 1")
+        enviarScreenshot()
+```
+
+### Selenium WebDriver Setup
+
+**FIFA Web App (Port 9250):**
+```python
+opts = Options()
+opts.add_experimental_option('debuggerAddress', 'localhost:9250')
+driver = webdriver.Chrome(options=opts)
+```
+
+**WhatsApp Web (Port 9222):**
+```python
+optsWhats = Options()
+optsWhats.add_experimental_option('debuggerAddress', 'localhost:9222')
+driverWhatsapp = webdriver.Chrome(options=optsWhats)
+```
+
+<Info>
+Both Chrome instances must be started manually with remote debugging enabled before running the bot.
+</Info>
+
+---
+
+## Best Practices
+
+<Accordion title="Setting Optimal Prices">
+  **Formula:**
+  - Buy Price: `salePrice / 1.07` (accounts for 5% EA tax)
+  - Min Sell: `salePrice - increment`
+  - Max Sell: `salePrice`
+  
+  **Example:**
+  - To sell at 10,000 coins
+  - Buy at: 10,000 / 1.07 = 9,345
+  - Min sell: 9,500
+  - Max sell: 10,000
+  - Profit: (10,000 × 0.95) - 9,345 = 155 coins
+</Accordion>
+
+<Accordion title="Choosing Iteration Counts">
+  - **Low iterations (5-10):** Clears sold items quickly, good for high-volume trading
+  - **High iterations (20-50):** Reduces transfer list checks, better for slow markets
+  - **Range checks (30-50):** Monitors price changes without excessive searches
+</Accordion>
+
+<Accordion title="Speed Mode Selection">
+  - **Normal (rapido=1):** Full delays, safer, less likely to trigger rate limits
+  - **Fast (rapido=2):** Minimal delays, higher throughput, higher ban risk
+  
+  <Warning>Fast mode increases detection risk. Use normal mode for long sessions.</Warning>
+</Accordion>
+
+<Accordion title="Filter Optimization">
+  - **Narrow filters:** Reduce competition, higher profit margins
+  - **Broad filters:** More opportunities, faster turnover
+  - **Popular items:** High volume, low profit per item
+  - **Niche items:** Low volume, high profit margins
+</Accordion>

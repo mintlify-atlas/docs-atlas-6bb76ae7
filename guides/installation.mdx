@@ -1,0 +1,224 @@
+---
+title: Installation
+description: Set up FIFA Bot with all required dependencies and system requirements
+---
+
+## System Requirements
+
+Before installing FIFA Bot, ensure your system meets these requirements:
+
+<CardGroup cols={2}>
+  <Card title="Operating System" icon="desktop">
+    Windows (required for win32clipboard functionality)
+  </Card>
+  <Card title="Python Version" icon="python">
+    Python 3.7 or higher
+  </Card>
+  <Card title="Chrome Browser" icon="chrome">
+    Google Chrome (latest version)
+  </Card>
+  <Card title="ChromeDriver" icon="circle-nodes">
+    ChromeDriver matching your Chrome version
+  </Card>
+</CardGroup>
+
+## Python Dependencies
+
+FIFA Bot requires several Python packages. Install them using pip:
+
+<Steps>
+  <Step title="Install Core Dependencies">
+    ```bash
+    pip install selenium pyrebase tkinter pillow pywin32
+    ```
+
+    <AccordionGroup>
+      <Accordion title="Package Details">
+        <ParamField path="selenium" type="library">
+          Browser automation framework for web scraping and interaction
+        </ParamField>
+        <ParamField path="pyrebase" type="library">
+          Firebase integration for remote control and cloud storage
+        </ParamField>
+        <ParamField path="tkinter" type="library">
+          GUI framework for the desktop interface (usually pre-installed with Python)
+        </ParamField>
+        <ParamField path="Pillow (PIL)" type="library">
+          Image processing for screenshot functionality
+        </ParamField>
+        <ParamField path="pywin32" type="library">
+          Windows clipboard integration for sending screenshots via WhatsApp
+        </ParamField>
+      </Accordion>
+    </AccordionGroup>
+  </Step>
+
+  <Step title="Verify Installation">
+    Test that all packages are installed correctly:
+    ```python
+    import selenium
+    import pyrebase
+    import tkinter
+    from PIL import Image
+    import win32clipboard
+    print("All dependencies installed successfully!")
+    ```
+  </Step>
+</Steps>
+
+## Chrome Setup
+
+FIFA Bot uses Chrome in debug mode to maintain your FIFA Web App session.
+
+<Steps>
+  <Step title="Add Chrome to System PATH">
+    Add Chrome's installation directory to your system PATH environment variable:
+    
+    **Default Chrome Path:**
+    ```
+    C:\Program Files\Google\Chrome\Application
+    ```
+
+    <Tip>
+      On Windows, go to **System Properties → Environment Variables → System Variables → Path** and add the Chrome directory.
+    </Tip>
+  </Step>
+
+  <Step title="Create User Data Directories">
+    Create separate directories for Chrome profiles:
+    ```bash
+    mkdir C:\chromedriver2
+    mkdir C:\chromedriver3
+    ```
+
+    <Note>
+      - `chromedriver2` is used for the FIFA Web App
+      - `chromedriver3` can be used for WhatsApp Web
+    </Note>
+  </Step>
+
+  <Step title="Launch Chrome in Debug Mode">
+    Open Command Prompt and run:
+    
+    **For FIFA Web App (Port 9250):**
+    ```cmd
+    chrome.exe --remote-debugging-port=9250 --user-data-dir="C:/chromedriver2"
+    ```
+
+    **For WhatsApp Web (Port 9222):**
+    ```cmd
+    chrome.exe --remote-debugging-port=9222 --user-data-dir="C:/chromedriver3"
+    ```
+
+    <Warning>
+      Keep these Chrome windows open while the bot is running. Closing them will disconnect the bot.
+    </Warning>
+  </Step>
+
+  <Step title="Login to Web Applications">
+    1. In the Chrome window on port 9250, navigate to FIFA Web App and log in
+    2. In the Chrome window on port 9222, navigate to WhatsApp Web and scan the QR code
+    3. Keep both sessions active
+  </Step>
+</Steps>
+
+## ChromeDriver Installation
+
+Selenium requires ChromeDriver to control Chrome.
+
+<Steps>
+  <Step title="Check Chrome Version">
+    Open Chrome and go to:
+    ```
+    chrome://settings/help
+    ```
+    Note your Chrome version number.
+  </Step>
+
+  <Step title="Download ChromeDriver">
+    Download the matching ChromeDriver from:
+    ```
+    https://chromedriver.chromium.org/downloads
+    ```
+  </Step>
+
+  <Step title="Install ChromeDriver">
+    1. Extract the `chromedriver.exe` file
+    2. Place it in a directory in your system PATH, or:
+    3. Place it in the same directory as your bot script
+
+    <Tip>
+      You can also add ChromeDriver's directory to your system PATH for easier access.
+    </Tip>
+  </Step>
+</Steps>
+
+## Verify Installation
+
+Test that everything is set up correctly:
+
+```python
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+
+# Test FIFA Web App connection
+opts = Options()
+opts.add_experimental_option('debuggerAddress', 'localhost:9250')
+driver = webdriver.Chrome(options=opts)
+print(f"Connected to: {driver.current_url}")
+
+# Test WhatsApp connection
+optsWhats = Options()
+optsWhats.add_experimental_option('debuggerAddress', 'localhost:9222')
+driverWhatsapp = webdriver.Chrome(options=optsWhats)
+print(f"WhatsApp connected: {driverWhatsapp.current_url}")
+```
+
+<Check>
+  If both connections succeed without errors, your installation is complete!
+</Check>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="ChromeDriver version mismatch">
+    **Error:** `SessionNotCreatedException: Message: session not created: This version of ChromeDriver only supports Chrome version XX`
+
+    **Solution:** Download the ChromeDriver version that matches your Chrome browser version.
+  </Accordion>
+
+  <Accordion title="Cannot connect to Chrome">
+    **Error:** `WebDriverException: Can not connect to the Service`
+
+    **Solution:** 
+    1. Ensure Chrome is running in debug mode with the correct port
+    2. Verify the port number matches in both the Chrome launch command and bot configuration
+    3. Check that no firewall is blocking the connection
+  </Accordion>
+
+  <Accordion title="Import errors">
+    **Error:** `ModuleNotFoundError: No module named 'pyrebase'`
+
+    **Solution:** Install the missing package:
+    ```bash
+    pip install pyrebase
+    ```
+  </Accordion>
+
+  <Accordion title="win32clipboard errors on non-Windows systems">
+    **Error:** `ImportError: No module named 'win32clipboard'`
+
+    **Solution:** The bot is designed for Windows. For other operating systems, you'll need to modify the screenshot functionality to remove win32clipboard dependencies.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/guides/configuration">
+    Configure Firebase, WhatsApp, and bot settings
+  </Card>
+  <Card title="Search Filters" icon="filter" href="/guides/search-filters">
+    Set up player search filters
+  </Card>
+</CardGroup>

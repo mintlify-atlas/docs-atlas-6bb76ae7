@@ -1,0 +1,656 @@
+---
+title: 'Troubleshooting'
+description: 'Common issues and solutions for FIFA Bot'
+icon: 'wrench'
+---
+
+## Connection Issues
+
+### Chrome Remote Debugging Not Working
+
+**Symptom:** Bot fails to connect to Chrome with error about debugger address.
+
+**Cause:** Chrome instance not started with remote debugging enabled.
+
+**Solution:**
+
+1. Close all Chrome instances completely
+2. Open Command Prompt (CMD) as Administrator
+3. Navigate to Chrome installation directory:
+   ```bash
+   cd "C:\Program Files\Google\Chrome\Application"
+   ```
+4. Start Chrome with debugging for FIFA:
+   ```bash
+   chrome.exe --remote-debugging-port=9250 --user-data-dir="C:/chromedriver2"
+   ```
+5. In a **separate** CMD window, start Chrome for WhatsApp:
+   ```bash
+   chrome.exe --remote-debugging-port=9222 --user-data-dir="C:/chromedriver3"
+   ```
+6. Log into FIFA Web App in the first window
+7. Log into WhatsApp Web in the second window
+8. Run the bot script
+
+<Warning>
+**Important:** You must use different `user-data-dir` paths for each Chrome instance. Using the same path will cause conflicts.
+</Warning>
+
+---
+
+### "Element Not Found" Errors
+
+**Symptom:** Bot crashes with `NoSuchElementException` or "element not found" errors.
+
+**Common Causes:**
+
+<Accordion title="1. EA Updated the Web App UI">
+  **Symptom:** Bot suddenly stops working after an EA update.
+  
+  **Solution:**
+  - XPath selectors may have changed
+  - Inspect the element in Chrome DevTools (F12)
+  - Update the XPath in the corresponding function
+  - Example:
+    ```python
+    # Old XPath
+    driver.find_element_by_xpath("/html/body/main/section/...[old path]")
+    
+    # Updated XPath after EA update
+    driver.find_element_by_xpath("/html/body/main/section/...[new path]")
+    ```
+  
+  <Info>Check the FIFA Bot community forums or Discord for updated XPaths after EA updates.</Info>
+</Accordion>
+
+<Accordion title="2. Page Not Fully Loaded">
+  **Symptom:** Bot clicks too fast before elements appear.
+  
+  **Solution:**
+  - Increase `time.sleep()` delays in the affected function
+  - Use explicit waits instead of fixed sleeps:
+    ```python
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.common.by import By
+    
+    # Wait up to 10 seconds for element
+    element = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, "your_xpath_here"))
+    )
+    element.click()
+    ```
+</Accordion>
+
+<Accordion title="3. Wrong Screen Context">
+  **Symptom:** Bot tries to interact with element on wrong screen.
+  
+  **Solution:**
+  - Add navigation checks before operations
+  - Example:
+    ```python
+    # Verify we're on transfer market screen
+    if len(driver.find_elements_by_xpath("/html/body/main/section/nav/button[3]")) > 0:
+        clickBuscar()
+    else:
+        irMercadoTransferencias()
+        clickBuscar()
+    ```
+</Accordion>
+
+<Accordion title="4. Session Expired">
+  **Symptom:** Bot can't find elements because FIFA session logged out.
+  
+  **Solution:**
+  - Bot should auto-detect and call `reLogin()`
+  - If not working, manually trigger relogin:
+    - Update Firebase: `{"comando": "RELOGIN"}`
+    - Or restart bot after logging in manually
+  
+  **Update Password:**
+  ```python
+  # In reLogin() function (line ~904)
+  input.send_keys("YourActualPassword")  # Change "Warewolf10"
+  ```
+</Accordion>
+
+---
+
+### Firebase Connection Issues
+
+**Symptom:** Bot starts but remote control doesn't work.
+
+**Cause:** Firebase authentication or database issues.
+
+**Diagnostic Steps:**
+
+1. Check Firebase initialization:
+   ```python
+   # Should print "OK" without errors
+   db.update({"comando":"OK"})
+   print("Firebase connected successfully")
+   ```
+
+2. Verify Firebase config:
+   ```python
+   config = {
+     "apiKey": "AIzaSyCO09JciLlqV3N4K7hV90qK_8XBvGBaCLI",
+     "authDomain": "fifabot-e4c0b.firebaseapp.com",
+     "databaseURL": "https://fifabot-e4c0b.firebaseio.com",
+     "storageBucket": "fifabot-e4c0b.appspot.com"
+   }
+   ```
+
+3. Test database write:
+   ```python
+   db.child("test").set({"status": "working"})
+   ```
+
+**Common Fixes:**
+
+<Accordion title="API Key Invalid">
+  - Your Firebase project credentials may have changed
+  - Go to Firebase Console → Project Settings → General
+  - Copy the web app configuration
+  - Replace `config` dictionary in the bot script
+</Accordion>
+
+<Accordion title="Database Rules Too Restrictive">
+  - Go to Firebase Console → Realtime Database → Rules
+  - For testing, set to:
+    ```json
+    {
+      "rules": {
+        ".read": true,
+        ".write": true
+      }
+    }
+    ```
+  
+  <Warning>These rules allow anyone to read/write. In production, implement proper authentication.</Warning>
+</Accordion>
+
+<Accordion title="Network/Firewall Blocking">
+  - Check if firewall blocks port 443 (Firebase uses HTTPS)
+  - Try disabling antivirus temporarily
+  - Test with mobile hotspot to rule out network issues
+</Accordion>
+
+---
+
+## WhatsApp Automation Issues
+
+### Messages Not Sending
+
+**Symptom:** Bot runs but doesn't send WhatsApp notifications.
+
+**Checklist:**
+
+1. ✅ WhatsApp Web is open in Chrome on port 9222
+2. ✅ `eW` checkbox is enabled in bot UI
+3. ✅ Target chat is **first** in WhatsApp sidebar (pin it)
+4. ✅ WhatsApp Web is not showing "Phone not connected" warning
+
+**XPath Issues:**
+
+WhatsApp Web updates frequently break XPaths. Current XPaths (as of script):
+
+```python
+# Chat selection
+chat = driverWhatsapp.find_element_by_xpath(
+    '//*[@id="pane-side"]/div[1]/div/div/div/div/div/div[2]/div[2]/div[1]/span/span'
+)
+
+# Message input
+posicionar = driverWhatsapp.find_element_by_xpath(
+    "//*[@id='main']/footer/div[1]/div[2]/div/div[2]"
+)
+
+# Send button
+botonEnviar = driverWhatsapp.find_element_by_xpath(
+    "//*[@id='main']/footer/div[1]/div[3]/button/span"
+)
+```
+
+**How to Find Updated XPaths:**
+
+1. Open WhatsApp Web in Chrome
+2. Press F12 (Developer Tools)
+3. Click the "Select Element" tool (Ctrl+Shift+C)
+4. Click the element you want (chat, input box, send button)
+5. In DevTools, right-click the highlighted HTML
+6. Copy → Copy XPath
+7. Update the bot script
+
+<Info>
+Consider using CSS selectors instead of XPath for better stability:
+```python
+chat = driverWhatsapp.find_element_by_css_selector('span[title="Contact Name"]')
+```
+</Info>
+
+---
+
+### Screenshots Not Sending
+
+**Symptom:** Text messages work but screenshots fail.
+
+**Possible Causes:**
+
+<Accordion title="Clipboard Issues (Windows)">
+  **Solution:**
+  - Ensure `win32clipboard` is installed:
+    ```bash
+    pip install pywin32
+    ```
+  - Restart Python after installing
+  - Check if other apps are accessing clipboard
+</Accordion>
+
+<Accordion title="PIL/Pillow Not Working">
+  **Solution:**
+  - Reinstall Pillow:
+    ```bash
+    pip uninstall Pillow
+    pip install Pillow
+    ```
+  - Verify `screenshot.png` is being created in bot directory
+</Accordion>
+
+<Accordion title="Image Send Button Changed">
+  **Solution:**
+  - WhatsApp changed the send button XPath
+  - Current XPath:
+    ```python
+    botonEnviar = driverWhatsapp.find_element_by_xpath(
+        "//*[@id='app']/div/div/div[2]/div[2]/span/div/span/div/div/div[2]/span/div/div"
+    )
+    ```
+  - If not working, inspect element and update
+</Accordion>
+
+---
+
+## Bot Behavior Issues
+
+### Bot Stops Unexpectedly
+
+**Symptom:** Bot runs for a while then stops without error.
+
+**Common Causes:**
+
+<Accordion title="1. Exception in Main Loop">
+  **Diagnostic:**
+  - Check console for "ALGO OCURRIO" messages
+  - If recovery fails twice, bot exits
+  
+  **Solution:**
+  - Improve error handling in `iniciar()` function
+  - Add logging to identify which operation fails:
+    ```python
+    try:
+        print("About to click buscar")
+        clickBuscar()
+        print("Successfully clicked buscar")
+    except Exception as e:
+        print(f"Failed: {e}")
+    ```
+</Accordion>
+
+<Accordion title="2. Session Timeout">
+  **Symptom:** Bot stops after 1-2 hours
+  
+  **Solution:**
+  - EA kicks you out after inactivity
+  - Enable remote relogin:
+    ```python
+    # In Firebase, set:
+    {"comando": "RELOGIN"}
+    ```
+  - Or implement auto-relogin detection:
+    ```python
+    if len(driver.find_elements_by_xpath('//*[@id="btnLogin"]')) > 0:
+        reLogin()
+    ```
+</Accordion>
+
+<Accordion title="3. Rate Limiting">
+  **Symptom:** Bot slows down or stops after many requests
+  
+  **Solution:**
+  - EA implements rate limiting
+  - Increase delays between actions:
+    ```python
+    rapido.set(1)  # Use normal mode instead of fast
+    ```
+  - Increase `itera` value (e.g., from 10 to 20)
+  - Add random delays:
+    ```python
+    import random
+    time.sleep(random.uniform(2, 5))
+    ```
+</Accordion>
+
+<Accordion title="4. Transfer List Full">
+  **Symptom:** Bot can't list items, stops buying
+  
+  **Solution:**
+  - Increase `itera` frequency to clear sold items more often
+  - Manually clear unsold items
+  - Check if prices are too high (items not selling)
+</Accordion>
+
+---
+
+### Not Finding Items to Buy
+
+**Symptom:** Bot searches but never clicks items.
+
+**Diagnostic:**
+
+```python
+# Add to clickEncontrado() function
+print(f"Found {len(driver.find_elements_by_xpath('/html/body/main/section/section/div[2]/div/div/section[1]/div/ul/li/div'))} items")
+```
+
+**Solutions:**
+
+<Accordion title="1. Max Price Too Low">
+  - Market prices increased
+  - Run `revisarPrecio()` or `buscarRango()` to find new range
+  - Manually adjust `maximo` field upward
+</Accordion>
+
+<Accordion title="2. Filters Too Narrow">
+  - Loosen search criteria:
+    - Remove club/nationality filters
+    - Expand position to multiple roles
+    - Try different leagues
+  - Click "Selecciones" to apply updated filters
+</Accordion>
+
+<Accordion title="3. High Competition">
+  - Other bots/snipers are faster
+  - Solutions:
+    - Use fast mode (`rapido=2`)
+    - Target less popular items
+    - Search during off-peak hours
+</Accordion>
+
+---
+
+### Buying But Not Selling
+
+**Symptom:** Items bought successfully but stay in transfer list.
+
+**Causes:**
+
+1. **Prices Too High:**
+   - Check if `final` price is competitive
+   - Compare to lowest market price
+   - Run `buscarRango()` to find realistic sell price
+
+2. **Item Type Changed:**
+   - EA may have released new cards (TOTW, promos)
+   - Your card type is now outdated
+   - Check market manually and adjust strategy
+
+3. **definirPrecio() Failing:**
+   - Add logging:
+     ```python
+     def definirPrecio():
+         if len(driver.find_elements_by_xpath("...")) > 0:
+             print("Setting prices...")
+             # existing code
+         else:
+             print("FALSA ALARMA - price fields not found")
+     ```
+
+---
+
+## Performance Issues
+
+### Bot Running Too Slowly
+
+**Symptom:** Searches taking 10+ seconds each.
+
+**Optimizations:**
+
+1. **Enable Fast Mode:**
+   ```python
+   rapido.set(2)  # In UI or code
+   ```
+
+2. **Reduce Unnecessary Waits:**
+   ```python
+   # Instead of:
+   time.sleep(5)
+   
+   # Use:
+   time.sleep(2)
+   ```
+
+3. **Disable Screenshots:**
+   - Uncheck `eSS` checkbox
+   - Screenshots slow down execution significantly
+
+4. **Optimize Selenium:**
+   ```python
+   from selenium.webdriver.chrome.options import Options
+   opts = Options()
+   opts.add_experimental_option('debuggerAddress', 'localhost:9250')
+   opts.add_argument('--disable-extensions')
+   opts.add_argument('--disable-gpu')
+   opts.add_argument('--no-sandbox')
+   driver = webdriver.Chrome(options=opts)
+   ```
+
+<Warning>
+Faster execution increases ban risk. Balance speed with safety.
+</Warning>
+
+---
+
+### High CPU/Memory Usage
+
+**Symptom:** Chrome using excessive resources.
+
+**Solutions:**
+
+1. **Close Unused Tabs:**
+   - Only keep FIFA and WhatsApp tabs open
+   - Close extensions/background tabs
+
+2. **Restart Chrome Periodically:**
+   - Close Chrome instances
+   - Clear user data directories:
+     ```bash
+     rmdir /s C:\chromedriver2\Default\Cache
+     rmdir /s C:\chromedriver3\Default\Cache
+     ```
+   - Restart debugging sessions
+
+3. **Limit Screenshot Frequency:**
+   - Only enable screenshots for errors:
+     ```python
+     def enviarScreenshot():
+         if error_occurred:  # Only on errors
+             driver.save_screenshot(...)
+     ```
+
+---
+
+## Security & Ban Prevention
+
+### Account Banned or Flagged
+
+**Symptom:** FIFA account receives warnings or temporary bans.
+
+**Prevention Strategies:**
+
+<Accordion title="1. Humanize Bot Behavior">
+  - Add random delays:
+    ```python
+    import random
+    time.sleep(random.uniform(1, 3))
+    ```
+  - Vary search patterns (don't repeat same item)
+  - Take breaks (stop bot for 30 min every 2 hours)
+</Accordion>
+
+<Accordion title="2. Limit Daily Volume">
+  - Don't buy/sell more than 50-100 items per day
+  - Set `cuantos` limit:
+    ```python
+    if cuantos >= 100:
+        enviarWhatsapp("Daily limit reached, stopping")
+        switchoff()
+        break
+    ```
+</Accordion>
+
+<Accordion title="3. Avoid Peak Detection Times">
+  - EA monitors heavily during:
+    - New content drops (6PM UK time)
+    - Weekend League rewards (Thursdays)
+    - TOTS/major promos
+  - Bot during off-peak hours (2-6 AM local time)
+</Accordion>
+
+<Accordion title="4. Use Realistic Prices">
+  - Don't undercut market by huge margins
+  - Follow market trends
+  - Avoid suspicious patterns (same price repeatedly)
+</Accordion>
+
+<Warning>
+**Disclaimer:** Using bots violates EA's Terms of Service. Your account may be permanently banned. Use at your own risk.
+</Warning>
+
+---
+
+## Advanced Troubleshooting
+
+### Enable Debug Logging
+
+Add comprehensive logging to diagnose issues:
+
+```python
+import logging
+
+# Setup logging
+logging.basicConfig(
+    filename='fifa_bot.log',
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+# In functions:
+def clickBuscar():
+    logging.info("Attempting to click Buscar button")
+    try:
+        driver.find_element_by_xpath("...").click()
+        logging.info("Successfully clicked Buscar")
+    except Exception as e:
+        logging.error(f"Failed to click Buscar: {e}")
+        raise
+```
+
+Log file will contain detailed execution trace for debugging.
+
+---
+
+### Check Selenium Driver Version
+
+**Symptom:** Selenium commands fail randomly.
+
+**Solution:**
+
+Ensure ChromeDriver matches Chrome version:
+
+1. Check Chrome version:
+   - Open Chrome → Three dots → Help → About Google Chrome
+   - Note version (e.g., 120.0.6099.109)
+
+2. Download matching ChromeDriver:
+   - Visit https://chromedriver.chromium.org/downloads
+   - Download version matching your Chrome
+
+3. Replace old ChromeDriver:
+   ```bash
+   # Windows
+   move chromedriver.exe C:\Windows\System32\chromedriver.exe
+   ```
+
+4. Verify:
+   ```python
+   from selenium import webdriver
+   driver = webdriver.Chrome()
+   print(driver.capabilities['browserVersion'])
+   ```
+
+---
+
+### Remote Debugging Not Releasing Ports
+
+**Symptom:** "Port already in use" error when starting Chrome.
+
+**Solution:**
+
+1. Find processes using the port:
+   ```bash
+   netstat -ano | findstr :9250
+   netstat -ano | findstr :9222
+   ```
+
+2. Kill the process:
+   ```bash
+   taskkill /PID <process_id> /F
+   ```
+
+3. Or use different ports:
+   ```python
+   opts.add_experimental_option('debuggerAddress', 'localhost:9251')
+   ```
+   ```bash
+   chrome.exe --remote-debugging-port=9251 --user-data-dir="C:/chromedriver2"
+   ```
+
+---
+
+## Getting Help
+
+If you're still experiencing issues:
+
+1. **Check the Logs:**
+   - Console output
+   - `fifa_bot.log` if enabled
+   - Screenshots in bot directory
+
+2. **Gather Information:**
+   - What function is failing?
+   - Error message (full traceback)
+   - Chrome/ChromeDriver versions
+   - When did it stop working?
+
+3. **Community Resources:**
+   - GitHub Issues (if open source)
+   - Discord/Telegram bot communities
+   - Stack Overflow (`selenium` + `fifa` tags)
+
+4. **Provide Debug Info:**
+   ```python
+   import sys
+   print(f"Python: {sys.version}")
+   print(f"Selenium: {selenium.__version__}")
+   print(f"Chrome: {driver.capabilities['browserVersion']}")
+   ```
+
+<Info>
+When asking for help, always include:
+- Python version
+- Selenium version
+- Chrome version
+- Full error message
+- Relevant code snippet
+</Info>

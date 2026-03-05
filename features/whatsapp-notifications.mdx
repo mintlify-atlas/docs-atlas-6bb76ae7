@@ -1,0 +1,422 @@
+---
+title: 'WhatsApp Notifications'
+description: 'Receive real-time updates about bot activity directly in WhatsApp'
+icon: 'whatsapp'
+---
+
+## Overview
+
+FIFA Bot integrates with WhatsApp Web to send you real-time notifications about every important event: purchases, sales, errors, and system status updates. Stay informed about your trading bot from anywhere, even when you're away from your computer.
+
+<Card title="Notification Types" icon="bell">
+  - **Purchase Confirmations**: When a player is successfully bought
+  - **Failed Purchases**: When a purchase attempt doesn't complete
+  - **New Price Ranges**: When the bot adjusts search parameters
+  - **Balance Updates**: Current coin balance after clearing sold items
+  - **Screenshots**: Visual confirmation of bot status
+  - **System Events**: Process started/stopped, errors, timing updates
+</Card>
+
+## How It Works
+
+The bot uses a second Chrome instance with Selenium to control WhatsApp Web:
+
+```python
+# bot-desktop.py:41-43
+optsWhats = Options()
+optsWhats.add_experimental_option('debuggerAddress', 'localhost:9222')
+driverWhatsapp = webdriver.Chrome(options=optsWhats)
+```
+
+<Info>
+  WhatsApp notifications require a Chrome instance running on port 9222 with WhatsApp Web already logged in. See setup instructions below.
+</Info>
+
+## Text Notifications
+
+### Sending Messages
+
+The core function sends text messages to your configured WhatsApp chat:
+
+```python
+# bot-desktop.py:448-460
+def enviarWhatsapp(mensaje):
+    if eW.get()== 1:  # Check if WhatsApp is enabled
+        # Click on the first chat (your configured contact/group)
+        chat=driverWhatsapp.find_element_by_xpath('//*[@id="pane-side"]/div[1]/div/div/div/div/div/div[2]/div[2]/div[1]/span/span')
+        chat.click()
+        time.sleep(1)
+        
+        # Click on message input field
+        posicionar=driverWhatsapp.find_element_by_xpath("//*[@id='main']/footer/div[1]/div[2]/div/div[2]")
+        posicionar.click()
+        time.sleep(2)
+        
+        # Type and send message
+        posicionar.send_keys(mensaje)
+        botonEnviar=driverWhatsapp.find_element_by_xpath("//*[@id='main']/footer/div[1]/div[3]/button/span")
+        botonEnviar.click()
+        print("WHATSAPP ENVIADO")
+```
+
+<Accordion title="XPath Targeting">
+  The function uses XPath selectors to identify WhatsApp Web elements. These paths:
+  - Target the first chat in your chat list
+  - Locate the message input field
+  - Find the send button
+  
+  **Note**: WhatsApp Web updates may change these XPaths. If messages stop sending, you may need to update the selectors.
+</Accordion>
+
+### Message Examples
+
+<Tabs>
+  <Tab title="Purchase Success">
+    ```python
+    # bot-desktop.py:392
+    enviarWhatsapp("SE COMPRO "+mWhats+" Iteracion: " + str(iteraciones))
+    ```
+    
+    **Example output:**
+    ```
+    SE COMPRO 850 Iteracion: 127
+    ```
+    
+    Tells you:
+    - A player was purchased
+    - Purchase price: 850 coins
+    - Iteration number: 127
+  </Tab>
+  
+  <Tab title="Purchase Failed">
+    ```python
+    # bot-desktop.py:403
+    enviarWhatsapp("NO SE COMPRO "+str(mWhats) + " Iteracion: " + str(iteraciones))
+    ```
+    
+    **Example output:**
+    ```
+    NO SE COMPRO 850 Iteracion: 127
+    ```
+    
+    Indicates purchase was attempted but failed (another user bought first).
+  </Tab>
+  
+  <Tab title="Price Range Update">
+    ```python
+    # bot-desktop.py:146, 190
+    enviarWhatsapp("Nuevo Rango Compra: "+str(maximo.get())+" Venta: "+final.get())
+    ```
+    
+    **Example output:**
+    ```
+    Nuevo Rango Compra: 950 Venta: 1100
+    ```
+    
+    Shows the bot has adjusted:
+    - Buy price: 950 coins maximum
+    - Sell price: 1100 coins
+  </Tab>
+  
+  <Tab title="Balance Update">
+    ```python
+    # bot-desktop.py:428, 609
+    saldo=driver.find_element_by_xpath("/html/body/main/section/section/div[1]/div[1]/div[1]").text
+    enviarWhatsapp(saldo)
+    ```
+    
+    **Example output:**
+    ```
+    12.450
+    ```
+    
+    Your current coin balance after clearing sold items.
+  </Tab>
+  
+  <Tab title="System Status">
+    ```python
+    # bot-desktop.py:593-594
+    enviarWhatsapp("Van "+str(cuantos))
+    enviarWhatsapp("Calculando Rango")
+    ```
+    
+    **Example output:**
+    ```
+    Van 50
+    Calculando Rango
+    ```
+    
+    Progress update showing iteration count and current activity.
+  </Tab>
+</Tabs>
+
+## Screenshot Notifications
+
+### Automated Screenshots
+
+The bot can capture and send screenshots of the FIFA Web App:
+
+```python
+# bot-desktop.py:477-488
+def enviarScreenshot():
+    if eSS.get() ==1:  # Check if screenshots are enabled
+        # Capture screenshot
+        driver.save_screenshot("screenshot.png")
+        filepath = 'screenshot.png'
+        
+        # Convert to clipboard-compatible format
+        image = Image.open(filepath)
+        output = BytesIO()
+        image.convert("RGB").save(output, "BMP")
+        data = output.getvalue()[14:]
+        output.close()
+        
+        # Copy to Windows clipboard
+        send_to_clipboard(win32clipboard.CF_DIB, data)
+        
+        # Send via WhatsApp
+        enviarImagenWhatsapp()
+```
+
+### Sending Images
+
+```python
+# bot-desktop.py:463-474
+def enviarImagenWhatsapp():
+    if eSS.get() ==1:
+        # Select chat
+        chat=driverWhatsapp.find_element_by_xpath('//*[@id="pane-side"]/div[1]/div/div/div/div/div/div[2]/div[2]/div[1]/span/span')
+        chat.click()
+        time.sleep(1)
+        
+        # Click message input and paste from clipboard
+        posicionar=driverWhatsapp.find_element_by_xpath("//*[@id='main']/footer/div[1]/div[2]/div/div[2]")
+        posicionar.click()
+        posicionar.send_keys(Keys.CONTROL, 'v')  # Paste
+        time.sleep(3)
+        
+        # Click send button for image
+        botonEnviar=driverWhatsapp.find_element_by_xpath("//*[@id='app']/div/div/div[2]/div[2]/span/div/span/div/div/div[2]/span/div/div")
+        botonEnviar.click()
+        print("IMAGEN ENVIADA")
+```
+
+<Card title="When Screenshots Are Sent" icon="camera">
+  - After clearing sold items (to show transfer list)
+  - When errors occur (for debugging)
+  - On demand via remote control SCREENSHOT command
+  - After re-login sequence completes
+</Card>
+
+### Clipboard Helper Function
+
+```python
+# bot-desktop.py:507-511
+def send_to_clipboard(clip_type, data):
+    win32clipboard.OpenClipboard()
+    win32clipboard.EmptyClipboard()
+    win32clipboard.SetClipboardData(clip_type, data)
+    win32clipboard.CloseClipboard()
+```
+
+<Warning>
+  The clipboard functions use `win32clipboard`, which only works on Windows. If you're running on Linux/Mac, you'll need to modify this code to use a different clipboard library.
+</Warning>
+
+## Notification Settings
+
+Control which notifications are sent using checkboxes in the bot interface:
+
+```python
+# bot-desktop.py:1133-1141
+eW=IntVar()
+eWradio=Checkbutton(frameAcciones, text="Enviar Whatsapp eW=1", variable=eW)
+eWradio.grid(sticky=W,row=0,column=0)
+
+eSS=IntVar()
+eSSradio=Checkbutton(frameAcciones, text="Enviar ScreenShot eSS=1", variable=eSS)
+eSSradio.grid(sticky=W,row=2,column=0)
+```
+
+<Tabs>
+  <Tab title="Enable Text Notifications">
+    Check the **"Enviar Whatsapp eW=1"** checkbox in the bot interface.
+    
+    This enables:
+    - Purchase notifications
+    - Price range updates
+    - Balance updates
+    - System status messages
+  </Tab>
+  
+  <Tab title="Enable Screenshot Notifications">
+    Check the **"Enviar ScreenShot eSS=1"** checkbox in the bot interface.
+    
+    This enables:
+    - Screenshots after clearing sold items
+    - Error screenshots
+    - Remote screenshot command
+    - Re-login confirmation screenshots
+  </Tab>
+</Tabs>
+
+## Setup Instructions
+
+<Steps>
+  <Step title="Launch WhatsApp Web">
+    Run Chrome in debugging mode on port 9222:
+    
+    ```bash
+    chrome.exe --remote-debugging-port=9222 --user-data-dir="C:/chromedriver_whatsapp"
+    ```
+    
+    <Info>
+      Use a separate user data directory from your FIFA Web App Chrome instance (which runs on port 9250).
+    </Info>
+  </Step>
+  
+  <Step title="Login to WhatsApp Web">
+    1. Navigate to https://web.whatsapp.com
+    2. Scan QR code with your phone
+    3. Keep this Chrome window open
+  </Step>
+  
+  <Step title="Configure Chat">
+    Pin the chat where you want to receive notifications to the top of your chat list.
+    
+    The bot sends messages to the first chat in the sidebar (top-pinned chat).
+    
+    **Options:**
+    - Personal chat with yourself (create a group with only you)
+    - Dedicated bot notifications group
+    - Chat with a trusted friend/partner
+  </Step>
+  
+  <Step title="Enable Notifications">
+    In the bot interface:
+    1. Check **"Enviar Whatsapp eW=1"** for text notifications
+    2. Check **"Enviar ScreenShot eSS=1"** for screenshot notifications
+  </Step>
+  
+  <Step title="Test">
+    Click the "SCREENSHOT" button in the remote control interface to test WhatsApp connectivity.
+  </Step>
+</Steps>
+
+## Common Notification Scenarios
+
+<Accordion title="Successful Trading Session">
+  ```
+  [09:15] Van 10
+  [09:15] Calculando Rango
+  [09:16] Nuevo Rango Compra: 950 Venta: 1100
+  [09:22] SE COMPRO 950 Iteracion: 23
+  [09:38] SE COMPRO 945 Iteracion: 47
+  [10:00] Limpiando vendidos
+  [10:01] 📷 [Screenshot showing transfer list]
+  [10:01] 12.850
+  ```
+  
+  Shows:
+  - Price range calculation
+  - Two successful purchases
+  - Sold items cleared
+  - Updated balance
+</Accordion>
+
+<Accordion title="Failed Purchase Attempt">
+  ```
+  [11:43] NO SE COMPRO 850 Iteracion: 89
+  ```
+  
+  The bot found a player at the target price but another user bought it first.
+</Accordion>
+
+<Accordion title="Error Recovery">
+  ```
+  [14:22] ALGO OCURRIO 1
+  [14:22] 📷 [Screenshot of error state]
+  ```
+  
+  Bot encountered an error and sent a screenshot for debugging.
+</Accordion>
+
+<Accordion title="Re-Login Sequence">
+  ```
+  [16:05] EMPEZARON RELOGIN
+  [16:05] CLICK A LOGIN
+  [16:15] INTRODUCIENDO PASSWORD
+  [16:15] CLICK A ACEPTAR LOGIN
+  [16:30] IR A MERCADO DE TRANSFERENCIAS
+  [16:35] INTRODUCIR FILTROS
+  [16:40] REVISAR RANGO DE PRECIO
+  [16:41] 📷 [Screenshot confirming re-login]
+  ```
+  
+  Full automatic session recovery with progress updates.
+</Accordion>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Messages not sending">
+    **Possible causes:**
+    1. WhatsApp Web not logged in
+    2. Chrome on port 9222 not running
+    3. Wrong chat selected (not pinned at top)
+    4. XPath selectors outdated
+    
+    **Solutions:**
+    - Verify Chrome debugger connection
+    - Check WhatsApp Web is active
+    - Re-pin notification chat to top
+    - Update XPaths if WhatsApp Web updated
+  </Accordion>
+  
+  <Accordion title="Screenshots not sending">
+    **Possible causes:**
+    1. Screenshot setting disabled (eSS=0)
+    2. Clipboard access issues
+    3. Screenshot file path problems
+    
+    **Solutions:**
+    - Enable "Enviar ScreenShot eSS=1"
+    - Run bot as administrator (for clipboard access)
+    - Check screenshot.png is created in bot directory
+  </Accordion>
+  
+  <Accordion title="Duplicate messages">
+    **Cause:** Network delay causing retry logic
+    
+    **Solution:** Increase time.sleep() delays in enviarWhatsapp function
+  </Accordion>
+</AccordionGroup>
+
+## Privacy & Security
+
+<Warning>
+  **WhatsApp Security Considerations:**
+  
+  - Messages are sent via your personal WhatsApp account
+  - Keep your notification chat private
+  - Don't share screenshots publicly (they may contain sensitive info)
+  - Consider using a dedicated phone number for bot notifications
+  - WhatsApp Terms of Service prohibit automation - use at your own risk
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Remote Control" icon="mobile" href="/features/remote-control">
+    Control your bot from anywhere
+  </Card>
+  <Card title="Automated Trading" icon="robot" href="/features/automated-trading">
+    Understand the trading algorithms
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/reference/troubleshooting">
+    Learn how to handle errors
+  </Card>
+  <Card title="Advanced Configuration" icon="sliders" href="/guides/configuration">
+    Optimize notification settings
+  </Card>
+</CardGroup>

@@ -1,0 +1,283 @@
+---
+title: 'Automated Trading'
+description: 'Understand how FIFA Bot automates player trading with intelligent search algorithms and price optimization'
+icon: 'robot'
+---
+
+## Overview
+
+The automated trading system is the core engine of FIFA Bot. It continuously searches the FIFA Ultimate Team transfer market, identifies undervalued players, purchases them automatically, and lists them for resale at profitable prices.
+
+<Card title="Key Capabilities" icon="chart-line">
+  - **Intelligent Search**: Dynamic price range adjustment based on market conditions
+  - **Instant Purchase**: Automated buying when players match criteria
+  - **Auto-Listing**: Immediate resale listing with calculated profit margins
+  - **Market Adaptation**: Continuous price monitoring and range optimization
+</Card>
+
+## How It Works
+
+### Search Algorithm
+
+The bot uses a sophisticated search strategy that adapts to market conditions:
+
+```python
+# bot-desktop.py:56-57
+def clickBuscar():
+    driver.find_element_by_xpath("/html/body/main/section/section/div[2]/div/div[2]/div/div[2]/button[2]").click()
+```
+
+The search process:
+
+1. **Sets maximum price filter** from your configured range
+2. **Clicks search button** to query the market
+3. **Checks for results** and evaluates pricing
+4. **Adjusts search parameters** dynamically
+
+### Buy Logic
+
+When a player is found within your price range, the bot executes an intelligent purchase flow:
+
+```python
+# bot-desktop.py:376-409
+def comprar():
+    try:
+        # Capture initial balance
+        nueva=driver.find_element_by_xpath("/html/body/main/section/section/div[1]/div[1]/div[1]").text
+        saldoInicial=nueva.replace(",",".")
+        
+        # Click buy now button
+        driver.find_element_by_xpath("/html/body/main/section/section/div[2]/div/div/section[2]/div/div/div[2]/div[2]/button[2]").click()
+        
+        # Confirm purchase
+        if len(driver.find_elements_by_xpath("/html/body/div[4]/section/div/div/button[1]")) > 0:
+            driver.find_element_by_xpath("/html/body/div[4]/section/div/div/button[1]").click()
+            time.sleep(5)
+            
+            # Verify purchase by checking balance change
+            nueva2=driver.find_element_by_xpath("/html/body/main/section/section/div[1]/div[1]/div[1]").text
+            saldoF=nueva2.replace(",",".")
+            
+            if float(saldoF) != float(saldoInicial):
+                # Purchase successful!
+                enviarWhatsapp("SE COMPRO "+mWhats+" Iteracion: " + str(iteraciones))
+                
+                # Auto-list for resale
+                if len(driver.find_elements_by_xpath("/html/body/main/section/section/div[2]/div/div/section[2]/div/div/div[2]/div[2]/div[1]/button")) > 0:
+                    ponerMercado()
+                    time.sleep(2)
+                    definirPrecio()
+```
+
+<Accordion title="Purchase Verification">
+  The bot verifies successful purchases by comparing your coin balance before and after the transaction. This prevents false positives from auction house errors or network delays.
+</Accordion>
+
+### Sell Automation
+
+Immediately after purchase, the bot lists the player for resale:
+
+```python
+# bot-desktop.py:352-371
+def ponerMercado():
+    driver.find_element_by_xpath("/html/body/main/section/section/div[2]/div/div/div[2]/div[2]/div[1]/button").click()
+
+def definirPrecio():
+    if len(driver.find_elements_by_xpath("/html/body/main/section/section/div[2]/div/div/section[2]/div/div/div[2]/div[2]/div[2]/div[2]/div[2]/input")) > 0:
+        # Set minimum price (start price)
+        minimo= driver.find_element_by_xpath("/html/body/main/section/section/div[2]/div/div/section[2]/div/div/div[2]/div[2]/div[2]/div[2]/div[2]/input")
+        minimo.click()
+        time.sleep(2)
+        minimo.send_keys(inicial.get())
+        
+        # Set maximum price (buy now price)
+        maximo = driver.find_element_by_xpath("/html/body/main/section/section/div[2]/div/div/section[2]/div/div/div[2]/div[2]/div[2]/div[3]/div[2]/input")
+        maximo.click()
+        time.sleep(2)
+        maximo.send_keys(final.get())
+        time.sleep(1)
+        
+        # List on market
+        driver.find_element_by_xpath("/html/body/main/section/section/div[2]/div/div/section[2]/div[2]/div[2]/button").click()
+```
+
+<Card title="Profit Calculation" icon="calculator">
+  The bot automatically calculates profitable resale prices accounting for EA's 5% tax:
+  
+  **Sale Price = (Purchase Price / 0.95) + Desired Profit**
+</Card>
+
+## Price Range Optimization
+
+The bot includes an intelligent price range finder that adapts to market changes:
+
+```python
+# bot-desktop.py:84-203
+def buscarRango():
+    it=1000
+    precioVentaActual=int(final.get())
+    bandera=0
+    
+    while it==1000:
+        # Try current price
+        campo=driver.find_element_by_xpath("/html/body/main/section/section/div[2]/div/div[2]/div/div[1]/div[2]/div[6]/div[2]/input")
+        campo.click()
+        time.sleep(2)
+        campo.send_keys(precioVentaActual)
+        time.sleep(1)
+        clickBuscar()
+        time.sleep(1)
+        
+        # Check how many results
+        if (len(driver.find_elements_by_xpath("/html/body/main/section/section/div[2]/div/div/section[1]/div/ul/li"))) ==0:
+            # No results - increase price
+            if precioVentaActual<1000:
+                precioVentaActual=precioVentaActual+50
+            elif precioVentaActual<10000:
+                precioVentaActual=precioVentaActual+100
+            elif precioVentaActual<50000:
+                precioVentaActual=precioVentaActual+500
+                
+        elif (len(driver.find_elements_by_xpath("/html/body/main/section/section/div[2]/div/div/section[1]/div/ul/li"))) <=4:
+            # Sweet spot found! 1-4 listings
+            # Calculate optimal buy/sell range
+            maximo.delete(0,END)
+            maximo.insert(0,round((int(precioVentaActual)*.95)-(int(precioVentaActual)*.05))-100)
+            final.insert(0,int(precioVentaActual))
+            
+            enviarWhatsapp("Nuevo Rango Compra: "+str(maximo.get())+" Venta: "+final.get())
+            break
+```
+
+<Tabs>
+  <Tab title="Low Value (<1,000)">
+    - **Price increment**: 50 coins
+    - **Target margin**: 15-20% profit
+    - **Search frequency**: Higher due to volatility
+  </Tab>
+  <Tab title="Mid Value (1,000-10,000)">
+    - **Price increment**: 100 coins
+    - **Target margin**: 5-10% profit
+    - **Search frequency**: Balanced
+  </Tab>
+  <Tab title="High Value (10,000-50,000)">
+    - **Price increment**: 500 coins
+    - **Target margin**: 5% profit minimum
+    - **Search frequency**: More conservative
+  </Tab>
+  <Tab title="Premium (>50,000)">
+    - **Price increment**: 500 coins
+    - **Target margin**: 5% profit minimum
+    - **Search frequency**: Patient approach
+  </Tab>
+</Tabs>
+
+## Bidding System
+
+For advanced trading, the bot supports automated bidding on auctions:
+
+```python
+# bot-desktop.py:674-709
+def recorrerBid(objetivos):
+    veces=50-int(objetivos)
+    encontrados=driver.find_elements_by_xpath("/html/body/main/section/section/div[2]/div/div/section[1]/div/ul/li")
+    
+    while (veces>=2):
+        for i in range(20):
+            elemento=driver.find_element_by_xpath('/html/body/main/section/section/div[2]/div/div/section[1]/div/ul/li['+str(i+1)+']')
+            precio=driver.find_element_by_xpath('/html/body/main/section/section/div[2]/div/div/section[1]/div/ul/li['+str(i+1)+']/div/div[2]/div[2]/span[2]').text
+            
+            elemento.click()
+            time.sleep(3)
+            
+            # Bid if no current bid OR current bid is below our max
+            if(precio=="---" or int(precio)<int(maximo.get())):
+                clickPujar()
+                time.sleep(2)
+                veces=veces-1
+```
+
+<Accordion title="Bidding Strategy">
+  The bot:
+  1. Scans up to 50 auction listings per cycle
+  2. Places bids only when current price is below your maximum
+  3. Moves to next listing immediately after bidding
+  4. Automatically relists won auctions for profit
+</Accordion>
+
+## Main Trading Loop
+
+The bot runs continuously with intelligent timing and error recovery:
+
+```python
+# bot-desktop.py:581-643
+def run():
+    global espera
+    espera=3
+    
+    while seguir:
+        iteraciones=iteraciones+1
+        
+        # Dynamic wait timing (alternates between 3 and 2 seconds)
+        if espera==3:
+            aumentaMinimoCompraYa()
+            espera=espera+1
+        else: 
+            disminuyeMinimoCompraYa()
+            espera=espera-1
+            
+        # Execute search cycle
+        clickBuscar()
+        time.sleep(1)
+        
+        clickEncontrado()  # Buy if found
+        time.sleep(2)
+        
+        clickRegresar()  # Return to search
+```
+
+<Warning>
+  The bot alternates search parameters to avoid detection and ensure comprehensive market coverage.
+</Warning>
+
+## Sold Items Management
+
+Automatically clears sold items from your transfer list:
+
+```python
+# bot-desktop.py:411-429
+def limpiarvendidos():
+    # Navigate to transfers
+    driver.find_element_by_xpath("/html/body/main/section/nav/button[3]/span").click()
+    time.sleep(5)
+    
+    # Click items section
+    driver.find_element_by_xpath("/html/body/main/section/section/div[2]/div/div/div[3]/div[2]").click()
+    time.sleep(5)
+    
+    # Clear sold items if any exist
+    if len(driver.find_elements_by_xpath("/html/body/main/section/section/div[2]/div/div/div/section[1]/header/button")) > 0:
+        enviarScreenshot()
+        driver.find_element_by_xpath("/html/body/main/section/section/div[2]/div/div/div/section[1]/header/button").click()
+        time.sleep(3)
+        
+    # Return to transfer market
+    driver.find_element_by_xpath("/html/body/main/section/nav/button[3]/span").click()
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Remote Control" icon="mobile" href="/features/remote-control">
+    Control your bot from anywhere using Firebase
+  </Card>
+  <Card title="WhatsApp Notifications" icon="message" href="/features/whatsapp-notifications">
+    Get real-time updates on all bot activity
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/guides/configuration">
+    Optimize your trading parameters
+  </Card>
+  <Card title="Filters" icon="filter" href="/guides/search-filters">
+    Set up player filters for targeted trading
+  </Card>
+</CardGroup>

@@ -1,80 +1,459 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start
+description: Step-by-step guide to install and run FIFA Bot
 ---
 
-## Get started in three steps
+## Installation
 
-Get your documentation site running locally and make your first customization.
+### Step 1: Clone the Repository
 
-### Step 1: Set up your local environment
+```bash
+git clone <repository-url>
+cd fifa-bot
+```
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+### Step 2: Install Python Dependencies
 
-### Step 2: Deploy your changes
+Install the required Python packages:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+```bash
+pip install selenium pyrebase pywin32 Pillow
+```
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  Make sure you have Python 3.x installed. You can verify by running `python --version`
 </Note>
+
+### Step 3: Verify ChromeDriver
+
+The project includes `chromedriver.exe` and `chromedriver85.exe`. Ensure you're using the version that matches your Chrome browser:
+
+```bash
+# Check your Chrome version
+# Chrome > Settings > About Chrome
+
+# If needed, download the matching ChromeDriver from:
+# https://chromedriver.chromium.org/downloads
+```
+
+<Warning>
+  ChromeDriver version must match your Chrome browser version for the bot to work properly.
+</Warning>
+
+## Chrome Setup
+
+The bot requires two separate Chrome instances with remote debugging enabled.
+
+### Step 4: Add Chrome to System PATH
+
+<Steps>
+  <Step title="Locate Chrome Installation">
+    Find your Chrome installation (usually `C:\Program Files\Google\Chrome\Application\`)
+  </Step>
+  
+  <Step title="Add to PATH">
+    Add the Chrome directory to your Windows PATH environment variable:
+    - Right-click "This PC" → Properties
+    - Advanced system settings → Environment Variables
+    - Edit "Path" under System Variables
+    - Add Chrome's directory path
+  </Step>
+  
+  <Step title="Verify">
+    Open Command Prompt and type `chrome.exe --version` to verify
+  </Step>
+</Steps>
+
+### Step 5: Launch Chrome Instances
+
+Launch two separate Chrome instances with different profiles and debugging ports.
+
+#### For FIFA Web App
+
+Run the provided batch script or execute in Command Prompt:
+
+```batch
+chrome.exe --remote-debugging-port=9250 --user-data-dir="C:/chromedriver2"
+```
+
+<Info>
+  This creates a Chrome instance on port 9250 with a separate profile at `C:/chromedriver2`
+</Info>
+
+#### For WhatsApp Web (Optional)
+
+Open a new Command Prompt and run:
+
+```batch
+chrome.exe --remote-debugging-port=9222 --user-data-dir="C:/chromedriver"
+```
+
+<Note>
+  WhatsApp notifications are optional but highly recommended for monitoring the bot remotely.
+</Note>
+
+### Step 6: Login to Web Apps
+
+<Steps>
+  <Step title="FIFA Web App Login">
+    In the first Chrome window (port 9250):
+    - Navigate to https://www.ea.com/fifa/ultimate-team/web-app/
+    - Login with your EA account
+    - Navigate to the Transfer Market
+    - Leave this window open
+  </Step>
+  
+  <Step title="WhatsApp Web Login (Optional)">
+    In the second Chrome window (port 9222):
+    - Navigate to https://web.whatsapp.com/
+    - Scan QR code with your phone
+    - Open the chat where you want to receive notifications
+    - Leave this window open
+  </Step>
+</Steps>
+
+## Firebase Configuration
+
+If you want to use the remote control feature, set up Firebase:
+
+### Step 7: Create Firebase Project
+
+<Steps>
+  <Step title="Go to Firebase Console">
+    Visit https://console.firebase.google.com/
+  </Step>
+  
+  <Step title="Create New Project">
+    Click "Add project" and follow the setup wizard
+  </Step>
+  
+  <Step title="Enable Realtime Database">
+    In your project dashboard:
+    - Go to Build → Realtime Database
+    - Click "Create Database"
+    - Start in test mode for development
+  </Step>
+  
+  <Step title="Get Configuration">
+    Go to Project Settings → General
+    Copy your Firebase configuration values
+  </Step>
+</Steps>
+
+### Step 8: Update Firebase Credentials
+
+Update the Firebase configuration in both files:
+
+**In `bot-desktop.py` (lines 23-28):**
+
+```python
+config = {
+  "apiKey": "YOUR_API_KEY",
+  "authDomain": "YOUR_PROJECT.firebaseapp.com",
+  "databaseURL": "https://YOUR_PROJECT.firebaseio.com",
+  "storageBucket": "YOUR_PROJECT.appspot.com"
+}
+```
+
+**In `CONTROL_REMOTO/js/index.js` (lines 1-10):**
+
+```javascript
+var firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID",
+    measurementId: "YOUR_MEASUREMENT_ID"
+};
+```
+
+<Warning>
+  Never commit your actual Firebase credentials to version control. Consider using environment variables for production.
+</Warning>
+
+## Running the Bot
+
+### Step 9: Launch the Bot
+
+Run the main bot script:
+
+```bash
+python bot-desktop.py
+```
+
+The Tkinter GUI will open with controls for the bot.
+
+### Step 10: Configure Trading Parameters
+
+In the bot GUI, set your trading parameters:
+
+<Steps>
+  <Step title="Set Price Range">
+    **Precio Final** (Selling Price): The price you want to sell players at
+    
+    The bot automatically calculates:
+    - **Precio Compra** (Buy Price): `Final / 1.07` (to ensure profit after EA's 5% tax)
+    - **Precio Inicial** (Starting Price): `Final - 1000` (listing start price)
+  </Step>
+  
+  <Step title="Configure Filters">
+    Use the filter dropdowns to target specific players:
+    - **LIGA**: Select league (e.g., "LaLiga Santander")
+    - **CLUB**: Enter specific club name
+    - **CALIDAD**: Quality (Oro/Gold, Plata/Silver, Bronce/Bronze)
+    - **TIPO**: Type (Comunes/Common, Únicos/Special)
+    - **POSICION**: Position (POR/GK, DC/ST, MC/CM, etc.)
+    - **PAIS**: Nationality (Brasil, Argentina, etc.)
+  </Step>
+  
+  <Step title="Apply Filters">
+    Click **Selecciones** to apply filters to the FIFA Web App
+  </Step>
+  
+  <Step title="Review Price">
+    Click **Revisar Precio** to analyze the market and find optimal price ranges
+  </Step>
+</Steps>
+
+### Step 11: Start Trading
+
+<Steps>
+  <Step title="Click Iniciar">
+    Press the **Iniciar** button to start the bot
+  </Step>
+  
+  <Step title="Monitor Activity">
+    Watch the console and WhatsApp for notifications:
+    - "SE COMPRO [price]" - Successful purchase
+    - "NO SE COMPRO [price]" - Failed purchase (too slow)
+    - "Limpiando vendidos" - Clearing sold items
+  </Step>
+  
+  <Step title="Stop When Needed">
+    Click **Detener** to stop the bot at any time
+  </Step>
+</Steps>
+
+## Configuration Options
+
+### Auto-Cleanup Settings
+
+Configure when the bot clears sold items from your transfer list:
+
+```python
+# In the GUI, set "Cada N búsquedas"
+itera.get()  # Number of searches before cleanup (default: varies)
+```
+
+### Price Range Auto-Adjustment
+
+Enable automatic price range recalculation:
+
+<CodeGroup>
+```python GUI Settings
+# Check "Buscar Rango eR=1" to enable
+# Set "Cada __ busquedas" (default: 31)
+# This recalculates optimal prices every N searches
+```
+
+```python Price Calculation Logic
+# The bot analyzes market depth
+if (len(found_items)) == 0:
+    # No items found - increase price
+    precioVentaActual = precioVentaActual + 50
+elif (len(found_items)) <= 4:
+    # Sweet spot - 4 or fewer items
+    # Update prices and continue
+    maximo = round((precioVenta * 0.95) - expected_profit)
+```
+</CodeGroup>
+
+### Notification Settings
+
+Enable/disable different notification types:
+
+- **Enviar Whatsapp eW=1**: Enable WhatsApp messages
+- **Enviar ScreenShot eSS=1**: Send screenshots on purchases/errors
+
+## Remote Control Setup
+
+### Step 12: Host the Web Interface
+
+<Steps>
+  <Step title="Open Control Interface">
+    Open `CONTROL_REMOTO/index.html` in a web browser
+  </Step>
+  
+  <Step title="Use Remote Controls">
+    - **DETENER**: Stop the bot remotely
+    - **SCREENSHOT**: Request a screenshot via WhatsApp
+    - **INICIAR**: Start the bot remotely
+  </Step>
+</Steps>
+
+<Info>
+  The remote control works from any device with internet access, allowing you to monitor and control the bot from your phone or another computer.
+</Info>
+
+## Trading Modes
+
+### Buy Now Mode (Default)
+
+The default mode continuously searches for "Buy Now" deals:
+
+```python
+def clickEncontrado():
+    # Finds items listed at "Buy Now" price
+    # Purchases immediately if below max price
+    # Lists for resale automatically
+```
+
+### Bidding Mode
+
+For lower competition markets, use bidding mode:
+
+```python
+# Click the bidding button in GUI
+def bidding():
+    # Places bids on multiple players
+    # Monitors auctions
+    # Lists won auctions for resale
+```
+
+## Troubleshooting
+
+### Bot Not Finding Chrome Windows
+
+<Warning>
+  Ensure Chrome instances are running on the correct ports (9250 and 9222) before starting the bot.
+</Warning>
+
+```bash
+# Restart Chrome with correct parameters
+chrome.exe --remote-debugging-port=9250 --user-data-dir="C:/chromedriver2"
+```
+
+### XPath Errors
+
+If the bot can't find elements:
+
+<Steps>
+  <Step title="Check FIFA Web App Updates">
+    EA frequently updates the Web App interface, which may break XPath selectors
+  </Step>
+  
+  <Step title="Update XPaths">
+    Use Chrome DevTools to find new element paths:
+    - Right-click element → Inspect
+    - Copy → Copy XPath
+    - Update in `bot-desktop.py`
+  </Step>
+</Steps>
+
+### Session Expired
+
+If you get logged out of FIFA Web App:
+
+```python
+# Use the re-login function
+def reLogin():
+    # Click through login screens
+    # Enter password
+    # Navigate back to transfer market
+```
+
+Or manually:
+1. Click **RELOGIN** in remote control interface
+2. Or restart the Chrome instance and log in again
+
+### No Purchases Being Made
+
+If the bot searches but never buys:
+
+<Steps>
+  <Step title="Check Price Settings">
+    Your max buy price might be too low. Click **Revisar Precio** to analyze the market.
+  </Step>
+  
+  <Step title="Adjust Filters">
+    You might be targeting a very competitive market. Try different leagues/positions.
+  </Step>
+  
+  <Step title="Verify Balance">
+    Make sure you have enough coins to make purchases.
+  </Step>
+</Steps>
+
+## Advanced Usage
+
+### Custom Profit Margins
+
+Modify the profit calculation to suit your strategy:
+
+```python
+# In revisarPrecio() or buscarRango()
+# Adjust the profit margin calculation
+maximo = round((precioVenta * 0.95) - desired_profit)
+
+# Example: Higher profit margin
+maximo = round((precioVenta * 0.95) - 500)  # Aim for 500+ coin profit
+```
+
+### Speed Optimization
+
+Toggle fast/slow mode for different server conditions:
+
+```python
+# In GUI, there's a "rapido" checkbox
+if rapido.get() == 1:
+    time.sleep(normal_delay)  # Wait for server
+else:
+    time.sleep(1)  # Minimal delay for fastest operation
+```
+
+<Warning>
+  Faster speeds increase profit potential but may trigger EA's anti-bot detection. Use with caution.
+</Warning>
+
+## Best Practices
+
+<Steps>
+  <Step title="Start Small">
+    Begin with lower-value players (1000-5000 coins) to learn the bot's behavior
+  </Step>
+  
+  <Step title="Monitor Initially">
+    Watch the bot for the first hour to ensure it's working correctly
+  </Step>
+  
+  <Step title="Use Price Range Detection">
+    Let the bot find optimal prices rather than guessing
+  </Step>
+  
+  <Step title="Don't Run 24/7">
+    Take breaks to avoid detection and prevent account flags
+  </Step>
+  
+  <Step title="Keep Chrome Windows Open">
+    Never close the Chrome debugging windows while the bot is running
+  </Step>
+  
+  <Step title="Check Transfer List">
+    Periodically verify sold items are being cleared properly
+  </Step>
+</Steps>
+
+## Next Steps
+
+Now that your bot is running, learn how to:
+- Optimize your trading strategy
+- Handle errors and edge cases
+- Configure advanced filters
+- Analyze your profits
+
+<Info>
+  Remember: FIFA Bot is a powerful tool, but success requires smart configuration and market understanding. Start conservatively and scale up as you learn what works.
+</Info>

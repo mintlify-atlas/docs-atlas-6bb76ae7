@@ -1,0 +1,797 @@
+---
+title: 'FAQ'
+description: 'Frequently Asked Questions about FIFA Bot'
+icon: 'circle-question'
+---
+
+## General Questions
+
+### What is FIFA Bot?
+
+FIFA Bot is a Python-based automation tool for the FIFA Ultimate Team Web App. It automatically:
+- Searches the transfer market for undervalued players
+- Purchases items below market value
+- Lists them for resale at profit
+- Manages sold items and reinvests coins
+- Sends WhatsApp notifications for key events
+
+The bot runs on your local machine and controls Chrome browsers using Selenium WebDriver.
+
+---
+
+### Is this against FIFA's Terms of Service?
+
+**Yes.** Using automation tools violates EA Sports' Terms of Service.
+
+<Warning>
+**Risk:** Your FIFA account may receive:
+- Transfer market bans (temporary or permanent)
+- Coin wipes
+- Full account suspension
+
+Use this bot at your own risk. We are not responsible for any consequences.
+</Warning>
+
+**EA's Detection Methods:**
+- Repetitive actions at exact intervals
+- Superhuman reaction times
+- Suspicious trading patterns
+- High-volume transactions
+
+**Mitigation Strategies:**
+- Use "Normal" mode (not "Fast")
+- Limit daily transactions
+- Add random delays
+- Take regular breaks
+- Vary search parameters
+
+---
+
+### How much profit can I make?
+
+**It varies widely** based on:
+- **Market conditions:** Active markets = more opportunities
+- **Filters used:** Niche items = higher margins, lower volume
+- **Competition:** More bots = fewer snipes
+- **Time of day:** Off-peak hours = better deals
+- **Initial coins:** More capital = more simultaneous listings
+
+**Realistic Expectations:**
+
+| Starting Coins | Profit/Hour | Strategy |
+|----------------|-------------|----------|
+| 10,000 | 500-1,000 | Low-risk bronzes/silvers |
+| 50,000 | 2,000-5,000 | Popular golds |
+| 100,000+ | 5,000-15,000 | High-volume trading |
+
+**Example:**
+- Buy at 4,500 coins
+- Sell at 5,000 coins
+- After 5% EA tax: 4,750 coins
+- Profit: 250 coins per card
+- 20 sales/hour = 5,000 coins/hour
+
+<Info>
+Profit per transaction is typically 100-500 coins. The key is **volume** over time.
+</Info>
+
+---
+
+### Do I need programming knowledge?
+
+**Minimal programming required** for basic usage:
+
+✅ **You can do without coding:**
+- Run the bot
+- Adjust prices in UI
+- Change filters
+- Enable/disable WhatsApp
+- Start/stop operations
+
+❌ **You need Python knowledge for:**
+- Updating XPaths after EA updates
+- Adding new features
+- Customizing bot behavior
+- Fixing errors
+- Security improvements (e.g., removing hardcoded password)
+
+**Learning Resources:**
+- [Python Basics](https://www.python.org/about/gettingstarted/)
+- [Selenium Documentation](https://selenium-python.readthedocs.io/)
+- [XPath Tutorial](https://www.w3schools.com/xml/xpath_intro.asp)
+
+---
+
+## Pricing & Strategy
+
+### How does the pricing algorithm work?
+
+**1. Initial Setup:**
+You provide a target selling price (`final`).
+
+**2. Buy Price Calculation:**
+```python
+maxPrice = (sellPrice * 0.95) - expectedProfit
+```
+
+**Example:**
+- Target sale: 10,000 coins
+- Expected profit: 500 coins
+- Buy price: (10,000 × 0.95) - 500 = **9,000 coins**
+
+**Why 0.95?**
+EA takes 5% tax on sales:
+- Sell for 10,000
+- Receive 9,500
+- Subtract 9,000 cost = 500 profit
+
+**3. Price Range Search (`buscarRango`):**
+
+The bot searches upward from your target price:
+1. If **0 items** found → increase price
+2. If **1-4 items** found → **optimal range** (enough supply, not saturated)
+3. If **5+ items** found → decrease price (oversupplied)
+
+**4. Price Increments:**
+
+| Current Price | Increment |
+|---------------|----------|
+| < 1,000 | ±50 |
+| 1,000-9,999 | ±100 |
+| 10,000-49,999 | ±500 |
+| 50,000+ | ±500 |
+
+<Accordion title="Detailed Example: Finding Optimal Range">
+  **Starting:** `final = 5000`, bot searches at 5,000
+  
+  - **5,000 coins:** 8 items found → too many, decrease
+  - **4,900 coins:** 6 items found → still too many, decrease
+  - **4,800 coins:** 3 items found → ✅ **OPTIMAL**
+  
+  **Result:**
+  - Buy at: (4,800 × 0.95) - 300 = **4,260 coins**
+  - Sell min: 4,300
+  - Sell max: 4,800
+  - Profit: 4,560 - 4,260 = **300 coins/card**
+</Accordion>
+
+---
+
+### What are optimal search filters?
+
+**Beginner Strategy: High Volume, Low Profit**
+
+```python
+Quality: Oro (Gold)
+Type: Comunes (Common)
+League: Premier League
+Position: Any
+Price Range: 1,000-5,000
+```
+
+**Pros:**
+- Many opportunities
+- Fast turnover
+- Easy to find deals
+
+**Cons:**
+- Low profit per card (100-300 coins)
+- High competition
+
+---
+
+**Intermediate Strategy: Niche Trading**
+
+```python
+Quality: Oro
+Type: Únicos (Special cards)
+League: Eredivisie
+Nationality: Netherlands
+Price Range: 5,000-15,000
+```
+
+**Pros:**
+- Less competition
+- Higher margins (500-1,000 coins)
+- Predictable pricing
+
+**Cons:**
+- Fewer opportunities
+- Slower turnover
+- Requires market knowledge
+
+---
+
+**Advanced Strategy: Icon/High-Value Sniping**
+
+```python
+Type: Icono (Icon)
+Position: SDI (CAM) or DC (ST)
+Price Range: 100,000+
+```
+
+**Pros:**
+- Huge profit per snipe (10,000-100,000 coins)
+- Less bot competition
+
+**Cons:**
+- Very rare opportunities
+- Requires large capital
+- High risk if prices drop
+
+<Info>
+**Tip:** Start with high-volume, low-profit strategy to build capital. Once you have 100k+ coins, transition to niche trading.
+</Info>
+
+---
+
+### How do I adjust prices dynamically?
+
+**Method 1: Manual Adjustment**
+1. Stop the bot
+2. Update `maximo`, `inicial`, `final` fields
+3. Click "Selecciones" to apply
+4. Restart bot
+
+**Method 2: Automatic Range Search**
+1. Enable "Buscar Rango" (`eR=1`)
+2. Set "Cada __ busquedas" to 30-50
+3. Bot will auto-adjust every N searches
+4. Sends WhatsApp notification with new range
+
+**Method 3: Manual Trigger**
+1. Click "Revisar Precio" button in UI
+2. Bot recalculates optimal range immediately
+3. Updates UI fields
+
+**When to Adjust:**
+- No purchases in 30+ minutes
+- Items not selling (transfer list full)
+- After content updates (TOTW, promos)
+- Market crash/spike events
+
+---
+
+### What is "expected profit" vs "real profit"?
+
+**Expected Profit (`iEsperada`):**
+Your **target** profit per transaction.
+
+```python
+buyPrice = (sellPrice * 0.95) - iEsperada
+```
+
+**Example:**
+- Sell price: 10,000
+- Expected profit: 500
+- Bot buys at: 9,000
+- Actual profit: 9,500 - 9,000 = **500** ✅
+
+**Real Profit (`iReal`):**
+The **actual** profit you're achieving (manual tracking).
+
+**Why the difference?**
+- Market prices fluctuate
+- Items may sell at `inicial` (min price) instead of `final` (max price)
+- Competition forces lower prices
+- EA tax reduces margins
+
+**Monitoring:**
+```python
+# Calculate real profit:
+realProfit = (actualSellPrice * 0.95) - actualBuyPrice
+
+# Update iReal field manually after 10-20 transactions
+```
+
+<Info>
+If `iReal` is consistently lower than `iEsperada`, increase `iEsperada` or lower sell prices.
+</Info>
+
+---
+
+## Technical Questions
+
+### How do I handle session timeouts?
+
+FIFA Web App logs you out after ~1-2 hours of inactivity.
+
+**Symptoms:**
+- Bot stops finding elements
+- Login screen appears
+- Console shows "ERROR EN COMPRAR"
+
+**Solution 1: Automatic Relogin (Recommended)**
+
+Update the `reLogin()` function with your credentials:
+
+```python
+def reLogin():
+    enviarWhatsapp("EMPEZARON RELOGIN")
+    # ... (existing code) ...
+    
+    # UPDATE THIS LINE:
+    input.send_keys("YourActualPassword")  # Replace "Warewolf10"
+    
+    # ... (rest of function) ...
+```
+
+**Enable Remote Relogin:**
+In Firebase, update:
+```json
+{"comando": "RELOGIN"}
+```
+
+Bot will:
+1. Detect login screen
+2. Enter credentials
+3. Navigate to transfer market
+4. Restore filters
+5. Resume automation
+
+**Solution 2: Manual Relogin**
+1. Bot will stop with error
+2. Manually log into FIFA Web App
+3. Click "Selecciones" in bot UI
+4. Click "Iniciar" to resume
+
+**Solution 3: Proactive Session Refresh**
+
+Add to main loop:
+```python
+if iteraciones % 100 == 0:  # Every 100 iterations
+    # Refresh page to maintain session
+    driver.refresh()
+    time.sleep(5)
+    irMercadoTransferencias()
+```
+
+<Warning>
+**Security Risk:** Never commit credentials to version control. Use environment variables:
+```python
+import os
+password = os.getenv('FIFA_PASSWORD')
+```
+</Warning>
+
+---
+
+### What happens if internet disconnects?
+
+**Short Disconnection (< 30 seconds):**
+- Selenium commands will fail
+- Bot enters exception handler
+- Attempts recovery with `irMercadoTransferencias()`
+- If successful, resumes operation
+
+**Long Disconnection (> 30 seconds):**
+- FIFA Web App shows "Connection Lost"
+- Bot cannot recover automatically
+- Manual intervention required:
+  1. Refresh FIFA Web App page
+  2. Log back in if needed
+  3. Stop and restart bot
+
+**Mitigation:**
+
+Add network check to main loop:
+```python
+import requests
+
+def check_internet():
+    try:
+        requests.get('https://www.google.com', timeout=5)
+        return True
+    except:
+        return False
+
+while seguir:
+    if not check_internet():
+        enviarWhatsapp("Internet disconnected, pausing")
+        time.sleep(60)  # Wait 1 minute
+        continue
+    # ... (normal bot operations) ...
+```
+
+---
+
+### How do I optimize search parameters?
+
+**1. Analyze Logs**
+
+Track success rate:
+```python
+total_searches = 0
+total_purchases = 0
+
+def clickEncontrado():
+    global total_searches, total_purchases
+    total_searches += 1
+    if len(driver.find_elements_by_xpath("...")) > 0:
+        total_purchases += 1
+        success_rate = (total_purchases / total_searches) * 100
+        print(f"Success rate: {success_rate:.2f}%")
+```
+
+**Target:** 5-15% success rate is good for competitive items.
+
+**2. A/B Test Filters**
+
+Run bot with different filters for 1 hour each:
+- **Test A:** League = Premier League, Nationality = Any
+- **Test B:** League = Any, Nationality = Brazil
+
+Compare:
+- Purchases per hour
+- Average profit per item
+- Items sold / items bought ratio
+
+**3. Use buscarRango Strategically**
+
+Enable "Buscar Rango" (`eR=1`) with:
+- Low frequency (every 50 searches) for stable markets
+- High frequency (every 20 searches) for volatile markets
+
+**4. Timing**
+
+| Time (UTC) | Event | Strategy |
+|------------|-------|----------|
+| 6:00 PM | New content drop | **Avoid** (prices unstable) |
+| 12:00 AM | Weekend League rewards | **Trade** (high volume) |
+| 3:00 AM | Off-peak | **Snipe** (less competition) |
+| 9:00 AM | Morning EU | **Sell** (high demand) |
+
+**5. Monitor Competition**
+
+If success rate drops suddenly:
+- Competitor bots may be targeting same items
+- Switch filters immediately
+- Try different leagues/positions
+
+<Accordion title="Advanced: Multi-Filter Rotation">
+  Rotate through multiple filter sets:
+  
+  ```python
+  filter_sets = [
+      {"league": "Premier League", "nation": "Brazil"},
+      {"league": "LaLiga", "nation": "Argentina"},
+      {"league": "Serie A", "nation": "Italy"},
+  ]
+  
+  current_filter = 0
+  
+  # Every 20 searches:
+  if iteraciones % 20 == 0:
+      current_filter = (current_filter + 1) % len(filter_sets)
+      apply_filter(filter_sets[current_filter])
+  ```
+</Accordion>
+
+---
+
+### Can I run multiple bots simultaneously?
+
+**Yes, but with limitations.**
+
+**Requirements:**
+- Multiple FIFA accounts (different EA accounts)
+- Separate Chrome instances (different ports)
+- Different filter sets (avoid competing with yourself)
+
+**Setup:**
+
+**Bot 1 (Account A):**
+```bash
+chrome.exe --remote-debugging-port=9250 --user-data-dir="C:/fifa_account1"
+chrome.exe --remote-debugging-port=9222 --user-data-dir="C:/whatsapp1"
+```
+
+**Bot 2 (Account B):**
+```bash
+chrome.exe --remote-debugging-port=9260 --user-data-dir="C:/fifa_account2"
+chrome.exe --remote-debugging-port=9232 --user-data-dir="C:/whatsapp2"
+```
+
+**Update bot script:**
+```python
+# bot_account1.py
+opts.add_experimental_option('debuggerAddress', 'localhost:9250')
+
+# bot_account2.py
+opts.add_experimental_option('debuggerAddress', 'localhost:9260')
+```
+
+**Best Practices:**
+- Use different item types (Bot 1: Golds, Bot 2: Silvers)
+- Different leagues (Bot 1: EPL, Bot 2: LaLiga)
+- Stagger execution (start Bot 2 five minutes after Bot 1)
+
+<Warning>
+**Risk Multiplier:** Running multiple bots increases ban risk significantly. EA can detect patterns across accounts from the same IP address.
+</Warning>
+
+---
+
+### How do I update XPaths after EA updates?
+
+**When EA updates the Web App, XPaths break.**
+
+**Step-by-Step Fix:**
+
+1. **Open Chrome DevTools** (F12) on FIFA Web App
+
+2. **Find the Element:**
+   - Click the "Select Element" tool (Ctrl+Shift+C)
+   - Click the button/field that's not working
+
+3. **Copy XPath:**
+   - In DevTools, right-click the highlighted HTML element
+   - Copy → Copy XPath
+
+4. **Update Bot Script:**
+   ```python
+   # Old (broken):
+   driver.find_element_by_xpath("/html/body/main/section/OLD_PATH")
+   
+   # New (copied from DevTools):
+   driver.find_element_by_xpath("/html/body/main/section/NEW_PATH")
+   ```
+
+5. **Test:**
+   - Restart bot
+   - Verify the operation works
+
+**Common Elements to Update:**
+
+| Function | Element | Typical XPath |
+|----------|---------|---------------|
+| `clickBuscar()` | Search button | `.../button[2]` |
+| `comprar()` | Buy button | `.../button[2]` |
+| `ponerMercado()` | List button | `.../div[2]/button` |
+| `enviarWhatsapp()` | WhatsApp send | `...footer.../button` |
+
+**Alternative: Use More Stable Selectors**
+
+XPath is fragile. Use CSS selectors or attributes when possible:
+
+```python
+# Instead of long XPath:
+driver.find_element_by_xpath("/html/body/main/section/...")
+
+# Use CSS selector:
+driver.find_element_by_css_selector("button.ut-button-group button:nth-child(2)")
+
+# Or find by text:
+driver.find_element_by_xpath("//button[contains(text(), 'Search')]") 
+```
+
+<Info>
+**Pro Tip:** Join FIFA bot communities. When EA updates, members quickly share updated XPaths.
+</Info>
+
+---
+
+## Bidding Mode
+
+### What is Bidding Mode?
+
+Bidding mode (`bidding()` function) automates placing bids on players instead of buying instantly.
+
+**Workflow:**
+1. Searches for items with active bids
+2. Places bids on items below your max price
+3. Waits for auctions to expire (5 minutes)
+4. Lists won items on transfer market
+5. Clears expired/outbid items
+6. Repeats
+
+**Advantages:**
+- Lower purchase prices (often below market)
+- Less competition from sniper bots
+- Can win items at 50-70% market value
+
+**Disadvantages:**
+- Slower (wait for auctions to expire)
+- Lower success rate (often outbid)
+- Requires monitoring "target items" limit (50 max)
+
+---
+
+### How do I use Bidding Mode?
+
+**Setup:**
+
+1. Set your filters (League, Nationality, etc.)
+2. Set `maximo` = your max bid price
+3. Set `inicial` = min sell price
+4. Set `final` = max sell price
+5. Click "BIDDING" button in UI
+
+**Example:**
+```python
+# UI Settings:
+maximo = 4000  # Don't bid above 4,000 coins
+inicial = 4500  # List at 4,500 minimum
+final = 5000    # List at 5,000 maximum
+nacionalidadEntry = "Brasil"  # Start with Brazil
+
+# Click "BIDDING" button
+```
+
+**Process:**
+- Bot searches Brazil players
+- Bids on any with current bid < 4,000
+- Switches to Argentina
+- Repeats
+- Waits 300 seconds (5 minutes)
+- Clears expired bids
+- Lists won items at 4,500-5,000
+- Repeat cycle
+
+**Target Items:**
+FIFA limits you to 50 active bids. Bot calculates:
+```python
+bids_to_place = 50 - current_objectives
+```
+
+If you have 45 active bids, bot places 5 more.
+
+<Warning>
+Bidding mode is **slower** than instant buying. Expect 10-20 purchases per hour vs. 30-50 with instant buy.
+</Warning>
+
+---
+
+### Why does bidding stop with "too many bids"?
+
+FIFA limits bids to **50 active target items** at once.
+
+**Error Handling:**
+```python
+try:
+    mensaje = find_element_by_xpath('//*[@id="NotificationLayer"]/div')
+    mensaje.click()
+    time.sleep(300)  # Wait 5 minutes
+    break
+except:
+    pass  # No error, continue
+```
+
+When limit reached:
+1. Bot clicks error notification
+2. Waits 300 seconds (5 minutes)
+3. Allows auctions to expire
+4. Clears expired with `borrarcaducos()`
+5. Resumes bidding
+
+**Manual Fix:**
+Go to Transfers → Targets and manually remove expired bids.
+
+---
+
+## Safety & Ethics
+
+### How can I reduce ban risk?
+
+**1. Humanize Behavior:**
+```python
+import random
+
+# Add random delays:
+time.sleep(random.uniform(1.5, 3.5))
+
+# Randomize search order:
+if random.random() > 0.5:
+    aumentaMinimoCompraYa()
+else:
+    disminuyeMinimoCompraYa()
+```
+
+**2. Limit Activity:**
+- Max 50-100 transactions per day
+- Take 30-minute breaks every 2 hours
+- Don't run 24/7
+
+**3. Avoid Patterns:**
+- Don't search same item repeatedly
+- Vary filter sets
+- Change prices periodically
+
+**4. Use Proxies/VPN:**
+- EA tracks IP addresses
+- Residential proxies reduce detection
+- Change IP between sessions
+
+**5. Monitor Yourself:**
+```python
+if total_purchases > 100:
+    enviarWhatsapp("Daily limit reached")
+    switchoff()
+```
+
+<Warning>
+**No method is 100% safe.** EA's detection improves constantly. Accept the risk before botting.
+</Warning>
+
+---
+
+### Is this ethical?
+
+**This is a personal decision.**
+
+**Arguments Against:**
+- Violates Terms of Service
+- Gives unfair advantage over manual traders
+- Damages market economy
+- Ruins experience for legitimate players
+
+**Arguments For:**
+- Manual trading is tedious and repetitive
+- EA's market is already manipulated by large-scale botters
+- Automates what humans already do manually
+- Educational tool for learning automation
+
+**Our Stance:**
+We provide this tool for **educational purposes** to demonstrate web automation with Selenium. Use responsibly and understand the consequences.
+
+---
+
+### What are the legal implications?
+
+**Terms of Service Violation:**
+- Using bots breaks EA's ToS
+- EA can ban your account without warning or refund
+- You have no recourse (their platform, their rules)
+
+**Not Illegal (in most jurisdictions):**
+- Botting games is not a crime
+- No copyright infringement (you own the game)
+- No hacking/unauthorized access (using your own credentials)
+
+**Exceptions:**
+- Selling coins for real money = Against ToS + potential fraud
+- Accessing others' accounts = Illegal (computer fraud)
+- Distributing paid bot software may require business license
+
+**Disclaimer:**
+We are not lawyers. This is not legal advice. Consult a legal professional in your jurisdiction.
+
+---
+
+## Troubleshooting Quick Reference
+
+| Problem | Quick Fix |
+|---------|----------|
+| Bot won't start | Check Chrome remote debugging ports |
+| Element not found | Update XPaths after EA update |
+| No items found | Run `buscarRango()` or adjust filters |
+| WhatsApp not sending | Pin target chat to top of sidebar |
+| Session timeout | Enable `reLogin()` or manually re-authenticate |
+| Screenshots failing | Reinstall `pywin32` and `Pillow` |
+| High CPU usage | Close unused tabs, restart Chrome |
+| Bot stops unexpectedly | Check console for errors, enable logging |
+| Items not selling | Lower prices or run `revisarPrecio()` |
+| Account banned | Create new account, use mitigation strategies |
+
+---
+
+## Additional Resources
+
+**Documentation:**
+- [Selenium Python Docs](https://selenium-python.readthedocs.io/)
+- [Pyrebase Documentation](https://github.com/thisbejim/Pyrebase)
+- [Tkinter Tutorial](https://realpython.com/python-gui-tkinter/)
+
+**Communities:**
+- r/FIFA (Reddit)
+- FUT Trading Discord servers
+- Stack Overflow (`selenium` + `python` tags)
+
+**Tools:**
+- [Chrome DevTools](https://developer.chrome.com/docs/devtools/)
+- [XPath Tester](http://xpather.com/)
+- [FUTBIN](https://www.futbin.com/) (price tracking)
+
+<Info>
+For more help, refer to the [Troubleshooting](/reference/troubleshooting) guide or check the [Function Reference](/reference/functions) for detailed function documentation.
+</Info>

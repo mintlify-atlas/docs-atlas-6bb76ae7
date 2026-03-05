@@ -1,97 +1,157 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: FIFA Bot Documentation
 ---
 
-## Setting up
+<div className="relative overflow-hidden bg-gradient-to-br from-[#00A859] via-[#047857] to-[#065f46] dark:from-[#047857] dark:via-[#065f46] dark:to-[#064e3b] py-20">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="text-center">
+      <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6">
+        FIFA Bot Documentation
+      </h1>
+      <p className="text-lg sm:text-xl text-white/90 max-w-2xl mx-auto mb-8">
+        Automate your FIFA Ultimate Team trading with intelligent market monitoring, real-time notifications, and remote control capabilities.
+      </p>
+      <div className="flex flex-col sm:flex-row gap-4 justify-center items-center flex-wrap">
+        <a 
+          href="/quickstart" 
+          className="inline-flex items-center px-6 py-3 rounded-lg bg-white text-[#047857] font-semibold hover:bg-gray-100 transition-colors no-underline"
+        >
+          Get Started
+        </a>
+        <a 
+          href="/features/automated-trading" 
+          className="inline-flex items-center px-6 py-3 rounded-lg border border-white/30 bg-white/10 text-white font-semibold hover:bg-white/20 transition-colors no-underline"
+        >
+          Explore Features
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
 
-Get your documentation site up and running in minutes.
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+    Quick Start
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Get FIFA Bot running in minutes with these essential steps.
+  </p>
+  
+  <Steps>
+    <Step title="Install Dependencies">
+      Install Python and required packages including Selenium, Tkinter, and Pyrebase.
+      
+      ```bash
+      pip install selenium pyrebase4 pillow pywin32
+      ```
+      
+      <Note>Ensure you have Chrome and ChromeDriver installed for web automation.</Note>
+    </Step>
+    
+    <Step title="Configure Chrome Remote Debugging">
+      Launch Chrome with remote debugging enabled to connect the bot to FIFA Web App.
+      
+      ```bash
+      chrome.exe --remote-debugging-port=9250 --user-data-dir="C:/chromedriver2"
+      ```
+      
+      Log in to the FIFA Web App in the opened browser window.
+    </Step>
+    
+    <Step title="Set Up Firebase">
+      Configure Firebase credentials in the bot for remote control capabilities.
+      
+      ```python
+      config = {
+        "apiKey": "YOUR_API_KEY",
+        "authDomain": "YOUR_PROJECT.firebaseapp.com",
+        "databaseURL": "https://YOUR_PROJECT.firebaseio.com",
+        "storageBucket": "YOUR_PROJECT.appspot.com"
+      }
+      ```
+      
+      <Warning>Keep your Firebase credentials secure and never commit them to public repositories.</Warning>
+    </Step>
+    
+    <Step title="Launch the Bot">
+      Run the bot and configure your search parameters and pricing strategy.
+      
+      ```bash
+      python bot-desktop.py
+      ```
+      
+      The GUI will launch where you can set buy/sell prices and start automated trading.
+    </Step>
+  </Steps>
+</div>
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+    Core Features
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Discover what makes FIFA Bot a powerful trading automation tool.
+  </p>
+  
+  <CardGroup cols={3}>
+    <Card title="Automated Trading" icon="robot" href="/features/automated-trading">
+      Monitor the transfer market 24/7 and automatically purchase undervalued players for resale.
+    </Card>
+    <Card title="Remote Control" icon="mobile" href="/features/remote-control">
+      Control the bot from anywhere using Firebase real-time commands.
+    </Card>
+    <Card title="WhatsApp Alerts" icon="message" href="/features/whatsapp-notifications">
+      Get instant notifications and screenshots of successful purchases and sales.
+    </Card>
+    <Card title="Smart Pricing" icon="chart-line" href="/guides/pricing-strategies">
+      Dynamic price range calculation with automatic profit margin optimization.
+    </Card>
+    <Card title="Search Filters" icon="filter" href="/guides/search-filters">
+      Target specific players by league, club, position, nationality, and quality.
+    </Card>
+    <Card title="Bidding System" icon="gavel" href="/features/automated-trading">
+      Automated bidding on market objectives with customizable bid limits.
+    </Card>
+  </CardGroup>
+</div>
 
-## Make it yours
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+    Guides & Documentation
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Learn how to configure and optimize your FIFA Bot setup.
+  </p>
+  
+  <CardGroup cols={2}>
+    <Card title="Installation Guide" icon="download" href="/guides/installation">
+      Step-by-step setup instructions for Windows environments.
+    </Card>
+    <Card title="Configuration" icon="gear" href="/guides/configuration">
+      Configure Firebase, WhatsApp integration, and bot parameters.
+    </Card>
+    <Card title="Function Reference" icon="code" href="/reference/functions">
+      Complete reference of all bot functions and their usage.
+    </Card>
+    <Card title="Troubleshooting" icon="wrench" href="/reference/troubleshooting">
+      Common issues and solutions for smooth operation.
+    </Card>
+  </CardGroup>
+</div>
 
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="rounded-2xl border border-gray-200 dark:border-[#27272a] bg-gray-50 dark:bg-[#1a1d27] p-8 sm:p-12">
+    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
+      Ready to automate your FIFA trading?
+    </h2>
+    <p className="text-base text-gray-600 dark:text-gray-400 mb-6">
+      Follow our quickstart guide to get your bot running in minutes and start maximizing your FUT coin earnings.
+    </p>
+    <a 
+      href="/quickstart" 
+      className="inline-flex items-center px-6 py-3 rounded-lg bg-[#00A859] text-white font-semibold hover:bg-[#047857] transition-colors no-underline"
+    >
+      Get Started Now
+    </a>
+  </div>
+</div>
