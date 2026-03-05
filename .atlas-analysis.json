@@ -1,0 +1,73 @@
+{
+  "projectType": "general",
+  "projectName": "FIFA Bot",
+  "projectDescription": "Automated trading bot for FIFA Ultimate Team transfer market with remote control capabilities",
+  "theme": "aspen",
+  "primaryColor": "#00A859",
+  "lightColor": "#4ADE80",
+  "darkColor": "#047857",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get Started",
+        "pages": [
+          "introduction",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Core Features",
+        "pages": [
+          "features/automated-trading",
+          "features/remote-control",
+          "features/whatsapp-notifications"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/installation",
+          "guides/configuration",
+          "guides/search-filters",
+          "guides/pricing-strategies"
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "reference/functions",
+          "reference/troubleshooting",
+          "reference/faq"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Automated FIFA Ultimate Team transfer market monitoring",
+    "Smart buy/sell price calculation with profit margins",
+    "Real-time WhatsApp notifications and screenshots",
+    "Firebase-powered remote control interface",
+    "Automated bidding system with target objectives",
+    "Customizable search filters (league, club, position, nationality)",
+    "Dynamic price range adjustment",
+    "Multi-threaded operation for concurrent tasks"
+  ],
+  "publicApiSurface": [
+    "clickBuscar() - Search transfer market",
+    "clickEncontrado() - Click on found items",
+    "comprar() - Purchase items",
+    "ponerMercado() - List items for sale",
+    "definirPrecio() - Set sale prices",
+    "limpiarvendidos() - Clear sold items",
+    "enviarWhatsapp() - Send WhatsApp messages",
+    "enviarScreenshot() - Send screenshots via WhatsApp",
+    "buscarRango() - Find optimal price range",
+    "revisarPrecio() - Review and adjust pricing",
+    "recorrerBid() - Iterate through bidding items",
+    "selecciones() - Apply search filters",
+    "reLogin() - Re-authenticate to FIFA web app",
+    "Firebase command: DETENER - Stop bot",
+    "Firebase command: INICIAR - Start bot",
+    "Firebase command: SCREENSHOT - Capture screen"
+  ]
+}
